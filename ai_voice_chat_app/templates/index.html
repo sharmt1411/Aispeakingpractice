@@ -100,9 +100,13 @@
         }
 
         @keyframes wave {
-            0% { transform: scaleY(1); }
-            50% { transform: scaleY(0.6); }
-            100% { transform: scaleY(1); }
+<!--            0% { transform: scaleY(1); }-->
+<!--            50% { transform: scaleY(0.6); }-->
+<!--            100% { transform: scaleY(1); }-->
+             0% { transform: translateY(0); }
+             50% { transform: translateY(-10px); }
+             85% { transform: translateY(2px); }
+             100% { transform: translateY(0); }
         }
 
         .mic-button.waving .mic-icon {
@@ -180,9 +184,20 @@
         async function processAudio(audioBlob) {
             isProcessing = true;
 
+            // 模拟API调用
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+
             try {
+                // 这里替换为实际的API端点
+                // const response = await fetch('YOUR_API_ENDPOINT', {
+                //     method: 'POST',
+                //     body: formData
+                // });
+                // const data = await response.json();
+
                 // 模拟API响应延迟
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 // 播放录音
                 const audioUrl = URL.createObjectURL(audioBlob);
