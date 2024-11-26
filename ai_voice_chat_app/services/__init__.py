@@ -1,3 +1,9 @@
-from .speech_to_text import convert_speech_to_text
-from .text_processing import process_text
-from .text_to_speech import convert_text_to_speech
+from .service_instance import ServiceInstance
+from .service_instance import ServiceState
+
+from .service_manager import ServiceManager
+
+from .speech_to_text import STTService
+from .text_processing import CHATService
+from .text_to_speech import TTSService
+

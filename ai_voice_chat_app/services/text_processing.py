@@ -1,3 +1,8 @@
-def process_text(text):
-    # 对文本进行处理，调用 AI API 获取对话回复
-    pass
+from services import ServiceInstance
+from typing import Any
+
+
+class CHATService(ServiceInstance):
+    def process_data(self, data: Any) -> Any:
+        # 实现语音转文本的具体逻辑
+        return f"STT processed: {data}"

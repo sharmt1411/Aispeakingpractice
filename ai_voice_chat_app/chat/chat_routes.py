@@ -28,3 +28,6 @@ def handle_voice_message() :
     db.session.commit()
 
     return jsonify({"audio_response" : audio_response})
+
+
+

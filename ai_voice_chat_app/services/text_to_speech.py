@@ -1,3 +1,8 @@
-def convert_text_to_speech(text):
-    # 调用文字转语音 API，将文字回复转为语音
-    pass
+from services import ServiceInstance
+from typing import Any
+
+
+class TTSService(ServiceInstance):
+    def process_data(self, data: Any) -> Any:
+        # 实现语音转文本的具体逻辑
+        return f"STT processed: {data}"
