@@ -1,0 +1,1 @@
+from .socket_event import register_socket_events

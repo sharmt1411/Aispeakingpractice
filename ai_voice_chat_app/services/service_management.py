@@ -14,8 +14,8 @@ from services.service_instance import ServiceInstance, ServiceState
 from services.speech_to_text import STTService
 from services.text_to_speech import TTSService
 from services.text_processing import CHATService
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.WARNING)
 
 # service_name: ServiceClass
 ServicesClass = {
@@ -25,7 +25,7 @@ ServicesClass = {
 }
 
 
-class ServiceManager:
+class ServiceManagement:
     def __init__(self, input_queue, return_queue, max_instances: int = 10):
         self.max_instances = max_instances
         self.instances: Dict[str, ServiceInstance] = {}  # instance_name: ServiceInstance,userid_TTS:instance
@@ -41,7 +41,7 @@ class ServiceManager:
         self.thread = threading.Thread(target=self.process_input)
         self.thread.daemon = False  # 设置非守护线程，持续运行
         self.thread.start()
-        logger.info("SM：Service manager started.")
+        print("SM：Service manager started.")
 
     def callback(self, uid, data):
         """用于服务实例返回状态报告的回调函数以及更新状态，列表关系"""
@@ -50,25 +50,32 @@ class ServiceManager:
             if data == "destroyed":
                 self.instances[uid].state = ServiceState.DESTROYED
                 self.instances.pop(uid, None)
-                logger.info(f"SM-Callback-destroyed: {uid} destroyed.")
+                print(f"SM-Callback-destroyed: {uid} destroyed.")
                 return
             if data == "idle":
                 self.instances[uid].state = ServiceState.IDLE
-                logger.info(f"SM-Callback-idle: {uid} idled.")
+                print(f"SM-Callback-idle: {uid} idled.")
                 return
 
     def process_input(self):
         """发送（userid，service_name，''）启动服务进程"""
+        def analyze_data():
+            if data == "start" :
+                self.return_queue.put((user_id, "message", f"ready{service_name}"))
+            else :
+                service.feed(item)
+
         while not self.stop_event.is_set():
-            # logger.info("SM：Service manager process input thread running.")
+            # print("SM：Service manager process input thread running.")
             try:
                 item = self.input_queue.get(block=True, timeout=0.5)  # （user_id, service_class, data）
+                # print(">>>>>>>>>>>>>>>>>>>>>SM-process_input:", item)
             except queue.Empty:
                 continue  # 队列为空，继续等待
 
             try:
                 user_id, service_name, data = item
-                # logger.info(f"SM-Input: {user_id}, {service_name}")
+                # print(f"SM-Input: {user_id}, {service_name}")
                 if user_id == "stop":
                     self.shutdown()
                     break
@@ -76,44 +83,38 @@ class ServiceManager:
                 with self.lock:
                     service = self.instances.get(instance_name, None)
                     if service is not None and service.state == ServiceState.BUSY:
-                        logger.info(f"SM-Instance: {instance_name} exists, feeding data.")
-                        if data:
-                            service.feed(item)     # 可以考虑
-                            continue
-                        else:
-                            self.return_queue.put((user_id, "message", "readytotalk"))   # 注册时会发送空数据触发启动服务进程。
-                            continue
-                logger.info(f"SM-Instance: {instance_name} not exists, attempting get idle instance.")
+                        # print(f"SM-Instance: {instance_name} exists, feeding data.")
+                        analyze_data()
+                        continue
+                print(f"SM-Instance: {instance_name} not exists, attempting get idle instance.")
                 old_name, service = self.get_idle_instance(service_name)
                 if service is not None:
-                    logger.info(f"SM-Instance:idle instance {old_name} exists, occupying.")
+                    print(f"SM-Instance:idle instance {old_name} exists, occupying.")
                     self.occupy_instance(instance_name, old_name)
-                    self.return_queue.put((user_id, "message", "readytotalk"))
-                    if data:
-                        service.feed(data)
+                    analyze_data()
 
                 else:
-                    logger.info(f"SM-Instance:No idle instance exists, creating new instance.")
+                    print(f"SM-Instance:No idle instance exists, creating new instance.")
                     service = self.create_instance(user_id, service_name)
                     with self.lock:
                         self.instances[instance_name] = service
-                    logger.info(f"SM-Instance: created {instance_name}, starting.")
+                    print(f"SM-Instance: created {instance_name}, starting.")
                     if service is None:
                         self.return_queue.put((user_id, "message", "服务超出最大限制/或者服务调用错误，请等待"))
                         continue
-                    logger.info(f"SM-Instance: {instance_name} created, starting inner threads.")
+                    print(f"SM-Instance: {instance_name} created, starting inner threads.")
+                    # 新建服务实例在内部载入模型完成后，返回准备状态
                     self.instances[instance_name].start_thread()
-                    logger.info(f"SM-Instance: {instance_name}  inner threads started")
-                    # self.return_queue.put((user_id, "message", "readytotalk"))
-                    if data:
-                        # logger.info(f"SM-Instance: {instance_name} feeding data{data}")
-                        service.feed(data)
+                    print(f"SM-Instance: {instance_name}  inner threads started")
+                    if data == "start":
+                        continue
+                    service.feed(item)
 
             except Exception as e:
-                logger.info(f"SM-process_input Error: {str(e)}")
+                print(f"SM-process_input Error: {str(e)}")
                 continue
 
-        logger.info("SM：Service manager process input thread stopped.")
+        print("SM：Service manager process input thread stopped.")
 
     def get_idle_instance(self, service_class):
         """获取空闲的服务实例"""
@@ -137,13 +138,13 @@ class ServiceManager:
             try:
                 service_class = ServicesClass.get(service_name, None)
                 if service_class is None:
-                    logger.info(f"SM-Error: {service_name} is not a valid service name.STT/TTS/CHAT")
+                    print(f"SM-Error: {service_name} is not a valid service name.STT/TTS/CHAT")
                     return None
                 instance = service_class(user_id, service_name, timeout, idle_timeout, self.return_queue, self.callback)
 
                 return instance
             except Exception as e:
-                logger.info(f"SM-create-instance-Error: {str(e)}")
+                print(f"SM-create-instance-Error: {str(e)}")
                 return None
 
     def destroy_instance(self, instance_name: str) -> None:
@@ -156,14 +157,14 @@ class ServiceManager:
 
     def occupy_instance(self, instance_name: str, old_name: str) -> None:
         """占用服务实例"""
-        logger.info(f"SM-Occupy: {instance_name} occupying by {old_name}")
+        print(f"SM-Occupy: {instance_name} occupying by {old_name}")
         with self.lock:
-            logger.info(f"SM-Occupy-lock: {instance_name} occupying by {old_name}")
+            print(f"SM-Occupy-lock: {instance_name} occupying by {old_name}")
             if old_name in self.instances:
                 self.instances[old_name].state = ServiceState.BUSY
                 self.instances[old_name].uid = instance_name.split("_")[0]
                 self.instances[instance_name] = self.instances.pop(old_name)
-                logger.info(f"SM-Occupy: {instance_name} occupied  {old_name}")
+                print(f"SM-Occupy: {instance_name} occupied  {old_name}")
 
     def release_instance(self, instance_name: str) -> None:
         """释放服务实例"""
@@ -185,7 +186,7 @@ class ServiceManager:
 
         # 先停止所有服务
         with self.lock:
-            logger.info("SM： Starting shutdown, Stopping all instances.")
+            print("SM： Starting shutdown, Stopping all instances.")
             for instance in self.instances.values():
                 instance.feed(("stop", "stop", "stop"))
                 instance.destroy()                        # 注意死锁
@@ -206,16 +207,16 @@ class ServiceManager:
         #             # instance_timeout = min(5.0, timeout / len(self.instances))
         #             self.destroy_instance(uid)
         #         except Exception as e:
-        #             logger.info(f"Error shutting down instance {uid}: {e}")
+        #             print(f"Error shutting down instance {uid}: {e}")
         # self.stop_event.set()
 
 
 if __name__ == '__main__':
     input_queue = queue.Queue()
     return_queue = queue.Queue()
-    sm = ServiceManager(input_queue, return_queue, max_instances=10)
+    sm = ServiceManagement(input_queue, return_queue, max_instances=10)
     sm.start()
-    logger.info("SM：Service manager started.")
+    print("SM：Service manager started.")
     input_queue.put(("123", "STT", ""))
     sm.thread.join()
-    # logger.info("SM：Service manager stopped.")
+    # print("SM：Service manager stopped.")

@@ -37,6 +37,7 @@ class ServiceInstance(ABC):
         self.last_active_time = time.time()
         self.callback = callback
 
+    @abstractmethod
     def start_thread(self) -> None:
         """输入数据到服务实例"""
         print("parent method: start_thread")
@@ -45,11 +46,13 @@ class ServiceInstance(ABC):
             self.thread = threading.Thread(target=self.run)
             self.thread.start()
 
+    @abstractmethod
     def feed(self, data: Any) -> None:  # (user_id, service_name, data)
         """输入数据到服务实例的接口方法"""
         self.input_data.put(data)
         self.last_active_time = time.time()
 
+    @abstractmethod
     def run(self) -> None:
         """运行服务处理逻辑"""
         print(f"Parent Method: Service：Service {self.uid} started.")
@@ -106,8 +109,8 @@ class ServiceInstance(ABC):
                 return
             time.sleep(0.1)
             i += 1
-            if i % 30 == 0:
-                print(f"Service-instance：Idle Service {self.uid} wait destroy.{i/10}timeout:{self.idle_timeout}")
+            if i % 300 == 0:
+                print(f"Service-instance：Idle Service {self.uid}_{self.service_name} wait destroy.{i/10}timeout:{self.idle_timeout}")
 
         if self.state == ServiceState.BUSY:  # 如果还是空闲状态，销毁
             return
