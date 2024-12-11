@@ -1,7 +1,0 @@
-../.venv/
-.idea/
-realtimeSTT/
-__pycache__/
-*.pyc
-*.pyo
-config.txt

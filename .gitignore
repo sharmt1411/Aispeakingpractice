@@ -1,0 +1,12 @@
+../.venv/
+.idea/
+realtimeSTT/
+__pycache__/
+*.pyc
+*.pyo
+ai_voice_chat_app/config.txt
+/ai_voice_chat_app/services/models/
+/ai_voice_chat_app/services/output.wav
+/ai_voice_chat_app/services/test.py
+/ai_voice_chat_app/services/test-async-queue.py
+/ai_voice_chat_app/services/mem0-test.py
