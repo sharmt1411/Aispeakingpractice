@@ -26,7 +26,7 @@ ServicesClass = {
 
 
 class ServiceManagement:
-    def __init__(self, input_queue, return_queue, max_instances: int = 10):
+    def __init__(self, input_queue, return_queue, max_instances: int = 6):   # 最大实例数是包含3类服务，需要x3
         self.max_instances = max_instances
         self.instances: Dict[str, ServiceInstance] = {}  # instance_name: ServiceInstance,userid_TTS:instance
         self.input_queue = input_queue  # (user_id, service_name, data)
@@ -49,7 +49,8 @@ class ServiceManagement:
         with self.lock:
             if data == "destroyed":
                 self.instances[uid].state = ServiceState.DESTROYED
-                self.instances.pop(uid, None)
+                instance = self.instances.pop(uid, None)
+
                 print(f"SM-Callback-destroyed: {uid} destroyed.")
                 return
             if data == "idle":
@@ -154,6 +155,7 @@ class ServiceManagement:
             instance.state = ServiceState.DESTROYED
             instance.destroy()
             self.instances.pop(instance_name, None)
+            print(f"SM-Destroy: {instance_name} destroyed,list popped.")
 
     def occupy_instance(self, instance_name: str, old_name: str) -> None:
         """占用服务实例"""

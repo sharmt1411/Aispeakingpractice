@@ -5,6 +5,7 @@ import threading
 import time
 import logging
 import wave
+from multiprocessing import current_process
 from typing import override, Any
 
 import pyaudio
@@ -128,10 +129,10 @@ class STTService(ServiceInstance):
         self.input_data = queue.Queue()  # 清空输入队列
         if self.thread is None or not self.thread.is_alive():
             self.thread = threading.Thread(target=self.run)
-            self.thread.daemon = False  # Ensure the thread doesn't exit prematurely
+            self.thread.daemon = True  # Ensure the thread doesn't exit prematurely
             self.thread.start()
             self.transcribe_thread = threading.Thread(target=self.transcribe)
-            self.transcribe_thread.daemon = False  # Ensure the thread doesn't exit prematurely
+            self.transcribe_thread.daemon = True  # Ensure the thread doesn't exit prematurely
             self.transcribe_thread.start()
 
     @override
@@ -145,6 +146,7 @@ class STTService(ServiceInstance):
     @override
     def run(self):
         self.state = ServiceState.BUSY
+        print(">>>>>>>>>STT-run-current-thread", threading.current_thread().ident, "current-process-id", current_process().ident, flush=True)
 
         print(f"启动STT服务实例线程：{self.uid}")
         print(f"准备载入whisper模型, {time.time()}")
@@ -204,6 +206,9 @@ class STTService(ServiceInstance):
                         self.wait_destroy()
                         continue
         print(f"STT服务实例thread线程已停止：{self.uid}")
+        self.recorder.shutdown()
+        self.transcribe_thread.join(5)
+        print(f"STT服务recorder已停止：{self.uid}")
 
     def process_data(self, data: Any):
         """处理输入数据，返回结果"""
@@ -215,6 +220,7 @@ class STTService(ServiceInstance):
                 continue
             self.recorder.text(self.on_complete_text)       # 这里是阻塞线程，recorder服务未关闭情况下，会一直卡住等待
             time.sleep(0.01)
+        print(f"STT服务实例transcribe线程已停止：{self.uid}")
 
     def preprocess_text(self, text):
         """去除开头的省略号，空格，并将第一个字母大写"""
@@ -256,7 +262,7 @@ class STTService(ServiceInstance):
         self.prev_stabilize_text = text
 
         sentence_end_marks = ['.', '!', '?', '。', '！', '？', '……', '...']
-        if text.endswith("..."):
+        if text.endswith("...") or text.endswith("-"):
             self.recorder.post_speech_silence_duration = self.mid_sentence_detection_pause
         elif text and text[-1] in sentence_end_marks and self.prev_text and self.prev_text[-1] in sentence_end_marks:
             self.recorder.post_speech_silence_duration = self.end_of_sentence_detection_pause

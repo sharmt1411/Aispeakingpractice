@@ -1,6 +1,7 @@
 import os
 import pathlib
 import wave
+from multiprocessing import current_process
 from typing import Any
 import asyncio
 import re
@@ -43,14 +44,15 @@ class TTSService(ServiceInstance):
     def start_thread(self) -> None:
         """输入数据到服务实例"""
         print(f"TTS服务实例线程start thread：{self.uid}")
+        print("current-thread",threading.current_thread())
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             print(f"TTS服务实例当前目录：{current_dir}")
             # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
 
-            self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
-                                      local_models_path=os.path.join(current_dir, "models"))
-            # self.engine = SystemEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            # self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
+            #                           local_models_path=os.path.join(current_dir, "models"))
+            self.engine = SystemEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
 
             voices = self.engine.get_voices()
             print(f"TTS服务实例voices list：{voices}")
@@ -86,6 +88,8 @@ class TTSService(ServiceInstance):
 
     def run(self):
         self.state = ServiceState.BUSY
+        print(">>>>>>>>>TTS-run-current-thread", threading.current_thread().ident, "current-process-id", current_process().ident, flush=True)
+
 
         print(f"启动TTS服务实例线程：{self.uid}")
         self.return_queue.put((self.uid, "message", "readyTTS"))
@@ -138,6 +142,9 @@ class TTSService(ServiceInstance):
                         self.wait_destroy()
                         continue
         print(f"TTS服务实例thread线程已停止：{self.uid}")
+        self.stream.stop()
+        self.engine.shutdown()
+        print(f"TTS服务实例线程engine已销毁：{self.uid}")
 
     def process_data(self, data: Any):
         """处理输入数据，返回结果，调用大模型，小模型，返回结果"""

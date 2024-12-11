@@ -3,8 +3,11 @@ import threading
 import queue
 import time
 import logging
+from multiprocessing import current_process
 from typing import Any
 from abc import ABC, abstractmethod
+
+import torch
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -119,6 +122,14 @@ class ServiceInstance(ABC):
         """idle状态销毁服务实例,通知管理服务更新状态"""
         try:
             print(f"Service-instance：Service {self.uid} callback destroyed.")
+
+            current_thread = threading.current_thread()
+            current_process1 = current_process()
+            print(">>>>>>>>>>>>>>>>>>>>>>>>>>destroy<<<<<<<<<<<<<<<<<<<<<<<<<")
+            print(f"当前线程名称: {current_thread.name},id{current_thread.ident}")
+            print(f"当前进程名称: {current_process1.name},id{current_process1.ident}")
+
+
             if self.state != ServiceState.DESTROYED:
                 self.callback(self.uid+'_'+self.service_name, "destroyed")
             wait = time.time()
@@ -134,7 +145,9 @@ class ServiceInstance(ABC):
             print(f"SI-destroy Error: {str(e)}")
         finally:
             if self.state == ServiceState.DESTROYED:
+                print(f"Service-instance：Service {self.uid} destroyed.")
                 self.stop_event.set()
+                torch.cuda.empty_cache()
                 # if self.thread and self.thread.is_alive():
                 #     self.thread.join(timeout=2)
         # self.state = ServiceState.DESTROYED

@@ -146,10 +146,13 @@ class CHATService(ServiceInstance):
         loop.close()
 
     async def get_guidance(self) :
-        messages = self.guidance_prompt + self.chat_history[-4:] + [{"role" : "user",
-                                    "content": "I'm struggling with how to reply. Could you offer some suggestions?"
-                                               "Respond in format:'sentence1','sentence2','sentence3',"
-                                               "DO NOT RESPOND ANYTHING OTHER"}]
+        messages = self.guidance_prompt + [{"role" : "user",
+                                    "content": f"""I'm struggling with how to reply the assistant's massage. Could you offer three suggestions?"
+                                               "##Responce in the format:\n{{'sentence1';'sentence2';'sentence3'}},"
+                                               "##DO NOT RESPOND ANYTHING OTHER"
+                                               "Here is the conversation before:\n"
+                                                {self.chat_history[-4:]}"""
+                                            }]
         # print(messages)
         try :
             response = await self.client.chat.completions.create(
