@@ -56,7 +56,8 @@ The project mainly integrates functionalities from several famous repositories, 
 - requirements.txt Dependencies file
 
 ### flowchart
-![常用顺序流程图](https://github.com/user-attachments/assets/1302563a-ba4f-4735-bb3d-1652e3852f2a)
+![流程图](https://github.com/user-attachments/assets/43ff042c-c839-4e5c-b77b-67d500ef8221)
+
 
 
 
@@ -123,6 +124,7 @@ The project mainly integrates functionalities from several famous repositories, 
 - requirements.txt 依赖库文件
 
 ### 流程图
-![常用顺序流程图](https://github.com/user-attachments/assets/e11167c9-d37f-4b8e-a289-d8caf0449e43)
+![流程图](https://github.com/user-attachments/assets/0f37cc68-66f5-42a6-899c-a389ecb6b744)
+
 
 
