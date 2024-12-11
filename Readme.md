@@ -1,12 +1,12 @@
 ## AI-English-Tutor
 
-![interface screenshot](https://imgur.com/a/i5DZ73J)
+<img width="667" alt="image" src="https://github.com/user-attachments/assets/3b4e44d9-758e-4739-8fbb-b161fc1709fa">
 
-Here's the English translation while maintaining the original structure:
+
 
 ### Introduction
 
-As Chinese people, most of us, including myself, even though we recognize English, our pronunciation is extremely inaccurate.
+As Chinese people, most of us, including myself, even though we can read English, our pronunciation is extremely inaccurate.
 
 We often have "mute English" - we can read but can't speak.
 
@@ -22,9 +22,9 @@ I named her Nana, taken from the mobile assistant in "100 Things" - it's a very 
 
 The project mainly integrates functionalities from several famous repositories, including:
 
-- Speech Recognition: RealtimeSTT, using faster whisper model for near real-time speech recognition.
-- Text-to-Speech: RealtimeTTS, using various TTS engines like GTTS, Coqui models for text-to-speech conversion.
-- Text Dialogue: Using mem0-based memory dialogue technology to achieve accurate conversation history recall, avoiding complex implementation of context storage.
+- Speech Recognition: [RealtimeSTT](https://github.com/KoljaB/RealtimeSTT), using faster whisper model for near real-time speech recognition.
+- Text-to-Speech: [RealtimeTTS](https://github.com/KoljaB/RealtimeTTS), using various TTS engines like GTTS, Coqui models for text-to-speech conversion.
+- Text Dialogue: Using [mem0](https://github.com/mem0ai/mem0)-based memory dialogue technology to achieve accurate conversation history recall, avoiding complex implementation of context storage.
 
 ### How to Use
 
@@ -55,6 +55,12 @@ The project mainly integrates functionalities from several famous repositories, 
 - fronted/ Frontend project directory
 - requirements.txt Dependencies file
 
+### flowchart
+![常用顺序流程图](https://github.com/user-attachments/assets/1302563a-ba4f-4735-bb3d-1652e3852f2a)
+
+
+
+
 
 
 
@@ -62,7 +68,8 @@ The project mainly integrates functionalities from several famous repositories, 
 
 ## AI英语导师
 
-![界面截图](https://imgur.com/a/i5DZ73J)
+<img width="667" alt="image" src="https://github.com/user-attachments/assets/89b2103b-0381-453b-bf81-5b4445e2d68b">
+
 
 ### 介绍
 
@@ -114,3 +121,8 @@ The project mainly integrates functionalities from several famous repositories, 
     - 其他服务文件
 - fronted/ 前端项目目录 
 - requirements.txt 依赖库文件
+
+### 流程图
+![常用顺序流程图](https://github.com/user-attachments/assets/e11167c9-d37f-4b8e-a289-d8caf0449e43)
+
+
