@@ -50,9 +50,9 @@ class TTSService(ServiceInstance):
             print(f"TTS服务实例当前目录：{current_dir}")
             # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
 
-            # self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
-            #                           local_models_path=os.path.join(current_dir, "models"))
-            self.engine = SystemEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
+                                      local_models_path=os.path.join(current_dir, "models"))
+            # self.engine = SystemEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
 
             voices = self.engine.get_voices()
             print(f"TTS服务实例voices list：{voices}")

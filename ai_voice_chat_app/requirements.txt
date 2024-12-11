@@ -1,3 +1,0 @@
-Flask
-Flask-SQLAlchemy
-requests       # 用于API请求

@@ -1,4 +1,4 @@
-.venv/
+../.venv/
 .idea/
 realtimeSTT/
 __pycache__/

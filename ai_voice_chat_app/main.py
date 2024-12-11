@@ -7,7 +7,7 @@ import threading
 import logging
 from multiprocessing import Process, Queue
 
-from flask import Flask, request
+from flask import Flask, send_from_directory
 from flask_socketio import SocketIO
 
 from services import ServiceManagement
@@ -53,6 +53,7 @@ def service_manager_process(input_queue, output_queue):
     print('>>>>Service manager process stopped')
 
 
+
 if __name__ == '__main__':
 
     input_queue = Queue()  # 进程间通信队列
@@ -79,13 +80,39 @@ if __name__ == '__main__':
         connected_clients_lock = threading.Lock()
 
         os.environ['ENV'] = 'development'
-        app = Flask(__name__)
+
+        app = Flask(__name__, static_folder='static/react')
         if os.environ.get('ENV') == 'development':
             print('Running in development mode')
             app.config['DEBUG'] = True
         else:
             print('Running in production mode')
             app.config['DEBUG'] = False
+
+        # 处理首页路由
+        # 主页路由
+        @app.route("/", defaults={"path" : ""})
+        @app.route("/<path:path>")
+        def serve_react(path) :
+            try :
+                # 打印当前工作目录
+
+                if path.startswith("static") :  # 处理静态资源
+                    return send_from_directory(app.static_folder, path)
+                elif path :  # 如果路径不为空，返回文件或 404
+                    return send_from_directory(app.static_folder, path)
+                # 根路径返回 index.html
+                return send_from_directory(app.static_folder, "index.html")
+
+            except Exception as e :
+                print(f"Error: {str(e)}")
+                return str(e), 500
+
+
+        @app.route('/api/test')
+        def test() :
+            return {'message' : 'Server is running'}
+
 
         register_socket_events(socketio, input_queue, connected_clients, reverse_connected_clients, connected_clients_lock)
 

@@ -4,11 +4,51 @@ from typing import Any
 import queue
 import threading
 import time
+import os
+os.environ['MEM0_TELEMETRY'] = "false"   # disable telemetry .venv/Lib/site-packages/mem0/memory/telemetry.py
 
 from openai import OpenAI, AsyncOpenAI
+from mem0 import Memory, AsyncMemoryClient
+
 
 from .service_instance import ServiceInstance, ServiceState
 import config
+
+mem0_config = {
+    "llm": {
+        "provider": "openai",
+        "config": {
+            "model": config.MODEL_NAME,
+            "openai_base_url": config.BASE_URL,
+            "api_key": config.API_KEY,
+            "temperature": 0.1,
+            "top_p": 0.5,
+            "max_tokens": 2000,
+        }
+    },
+
+    "embedder": {
+        "provider": "openai",
+        "config": {
+            "model": config.EMBEDDING_MODEL_NAME,	 # "text-embedding-3-small",
+            "openai_base_url": config.EMBEDDING_BASE_URL,   # 注意与上面LLM的区别，单独配置
+            "api_key": config.EMBEDDING_API_KEY
+        }
+    },
+
+    "vector_store": {
+        "provider": "qdrant",
+        "config": {
+            "collection_name": "AI_speaking_practice",
+            # "embedding_model_dims": 1536,
+            "embedding_model_dims" : config.EMBEDDING_MODEL_DIMS,    # 硅基流动模型
+            "api_key": config.QDRANT_API_KEY,
+            "url": config.QDRANT_BASE_URL,
+            "port": 6333,
+        }
+    },
+    "version": "v1.1",
+}
 
 
 class CHATService(ServiceInstance):
@@ -18,7 +58,7 @@ class CHATService(ServiceInstance):
     def __init__(self, uid: str, service_name: str, timeout: float, idle_timeout: float,
                  return_queue: queue.Queue, callback) :
         super().__init__(uid, service_name, timeout, idle_timeout, return_queue, callback)
-        self.uid = uid  # userid+service_name唯一标识符
+        self.uid = uid  # userid唯一标识符
         self.service_name = service_name  # 服务名称
         self.timeout = timeout  # 重连超时时间
         self.idle_timeout = idle_timeout  # 空闲等待销毁时间
@@ -67,6 +107,8 @@ class CHATService(ServiceInstance):
                          "the user's question and provide some examples to reply to the question."
                          "Adjust your feedback based on the perceived level of the user"
              }]
+        self.memory = Memory.from_config(mem0_config)
+        self.previous_memories = []
 
     def start_thread(self) -> None:
         """输入数据到服务实例"""
@@ -113,7 +155,7 @@ class CHATService(ServiceInstance):
 
                     if data:
                         # print(f"CHAT服务实例收到音频数据：{self.uid},{len(data)},{type(data)}")
-                        self.process_data(data)
+                        self.process_data(item)
                         # 服务特殊由处理线程处理返回
                 except Exception as e:
                     print(f"CHAT-Service run-1 Error: {str(e)}")
@@ -136,13 +178,15 @@ class CHATService(ServiceInstance):
                         continue
         print(f"CHAT服务实例thread线程已停止：{self.uid}")
 
-    def process_data(self, data: Any):
+    def process_data(self, item: Any):
         """处理输入数据，返回结果，调用大模型，小模型，返回结果"""
-        self.chat_history.append({"role" : "user", "content" : data})
+        user_id, _, data = item
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(asyncio.gather(self.get_stream_response_chat()))
-        loop.run_until_complete(asyncio.gather(self.get_guidance()))
+
+        loop.run_until_complete(asyncio.gather(self.get_stream_response_chat(data)))
+        loop.run_until_complete(asyncio.gather(self.get_guidance(), self.search_memories(data, user_id), self.add_memory(data, user_id)))
+
         loop.close()
 
     async def get_guidance(self) :
@@ -154,6 +198,7 @@ class CHATService(ServiceInstance):
                                                 {self.chat_history[-4:]}"""
                                             }]
         # print(messages)
+        print("开始获取guidance")
         try :
             response = await self.client.chat.completions.create(
                 model=config.MODEL_NAME,
@@ -162,22 +207,31 @@ class CHATService(ServiceInstance):
                 temperature=0.5
             )
             print(response.choices[0].message.content)
+            print("结束获取guidance")
             self.return_queue.put((self.uid, "CHAT-guidance", response.choices[0].message.content))
             return response.choices[0].message.content
 
         except Exception as e :
             print("获取response失败", e)
 
-    async def get_stream_response_chat(self) :
+    async def get_stream_response_chat(self, data) :
         """大模型获取AI流式回复"""
-        messages = self.sys_prompt + self.chat_history
+
+        # 更新记忆，对话不带历史记忆，防止重复消耗token
+        self.chat_history.append({"role" : "user", "content" : data})
+
+        prompt = data
+        if self.previous_memories :
+            print(f"{self.uid}Previous memories: {self.previous_memories}")
+            prompt = f"User input: {data}\n Previous memories: {self.previous_memories}"
+        messages = self.sys_prompt + self.chat_history[-20:-1]+[{"role" : "user", "content" : prompt}]
         try :
             print("开始获取response", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             response = await self.client.chat.completions.create(
                 model=config.MODEL_NAME,
                 messages=messages,
-                max_tokens=4096,
-                temperature=1.0,
+                max_tokens=2048,
+                temperature=0.9,
                 stream=True
             )
             cache_sentences = ""
@@ -199,12 +253,29 @@ class CHATService(ServiceInstance):
 
             return None
 
-    async def get_memory(self):
+    async def get_memory(self, user_id):
         """记忆包括会话记忆，以天为单位，持久记忆：设置X条，通过LlamaIndex存储，相关记忆：涉及提问的相关记忆"""
-        pass
+        memories = await self.memory.get_all(user_id=user_id)
+        # print(f"get Memories: {memories}")
+        if memories["results"]:
+            return [m['memory'] for m in memories['results']]
+        else:
+            return []
 
-    async def set_memory(self):
-        pass
+    async def search_memories(self, query, user_id):
+        print(f"StartSearch query: {query}")
+        memories = await asyncio.to_thread(self.memory.search, query, user_id=user_id, limit=10)
+        print(f"Search results: {memories}")
+        if memories["results"]:
+            self.previous_memories = [m['memory'] for m in memories['results']]
+            return self.previous_memories
+        else:
+            return []
+
+    async def add_memory(self, record, user_id):
+        print(f"Add memory: {record}")
+        await asyncio.to_thread(self.memory.add, record, user_id=user_id)
+        print(f"Add memory success")
 
     async def need_memory(self):
         pass
@@ -228,6 +299,6 @@ if __name__ == '__main__':
         print(word[2])
         if word[1] == "CHAT-response" and word[2] == "end":
             break
-
+    time.sleep(10)
     instance.stop_event.set()
     print("结束")
