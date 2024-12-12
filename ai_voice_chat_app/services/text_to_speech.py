@@ -13,7 +13,7 @@ import time
 import numpy as np
 from RealtimeTTS import TextToAudioStream, SystemEngine, AzureEngine, ElevenlabsEngine, CoquiEngine, GTTSEngine, OpenAIEngine
 
-
+import config
 from .service_instance import ServiceInstance, ServiceState
 
 
@@ -47,15 +47,19 @@ class TTSService(ServiceInstance):
         print("current-thread",threading.current_thread())
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            print(f"TTS服务实例当前目录：{current_dir}")
+            print(f"TTS服务实例当前目录：{current_dir}，{time.time()}")
             # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
-
-            self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
-                                      local_models_path=os.path.join(current_dir, "models"))
-            # self.engine = SystemEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            tts_engine = config.TTS_ENGINE
+            if tts_engine == "Coqui":
+                self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
+                                          local_models_path=os.path.join(current_dir, "models"))
+            if tts_engine == "GTTS":
+                self.engine = GTTSEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            else:
+                self.engine = SystemEngine()
 
             voices = self.engine.get_voices()
-            print(f"TTS服务实例voices list：{voices}")
+            # print(f"TTS服务实例voices list：{voices}")
             if isinstance(self.engine, CoquiEngine) :
                 self.stream_info = [8, 1, 24000]  # 获取音频流信息,宽度值8为int16，8为float32
                 voice = "female_arabic"
@@ -64,7 +68,7 @@ class TTSService(ServiceInstance):
                 voice = voices[1]
             self.engine.set_voice(voice)
 
-            print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice}")
+            print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice},{time.time()}")
 
             self.stream = TextToAudioStream(self.engine, log_characters=False,
                                          on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
@@ -89,7 +93,6 @@ class TTSService(ServiceInstance):
     def run(self):
         self.state = ServiceState.BUSY
         print(">>>>>>>>>TTS-run-current-thread", threading.current_thread().ident, "current-process-id", current_process().ident, flush=True)
-
 
         print(f"启动TTS服务实例线程：{self.uid}")
         self.return_queue.put((self.uid, "message", "readyTTS"))
@@ -117,7 +120,7 @@ class TTSService(ServiceInstance):
                         break
 
                     if data == "begin":
-                        self.return_queue.put((self.uid, "TTS-format", self.stream_info))
+                        self.return_queue.put((self.uid, "TTS-format", self.stream_info))   # ws handle register会提前发送一次
                         # print(f"TTS服务实例收到音频数据：{self.uid},{len(data)},{type(data)}")
                         self.processing = True
                         self.process_data(data)
