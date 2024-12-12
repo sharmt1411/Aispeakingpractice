@@ -1,10 +1,7 @@
 import os
-import pathlib
 import wave
 from multiprocessing import current_process
 from typing import Any
-import asyncio
-import re
 
 import queue
 import threading
@@ -50,10 +47,11 @@ class TTSService(ServiceInstance):
             print(f"TTS服务实例当前目录：{current_dir}，{time.time()}")
             # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
             tts_engine = config.TTS_ENGINE
+            print(f"TTS服务实例选择的引擎：{tts_engine}")
             if tts_engine == "Coqui":
                 self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
                                           local_models_path=os.path.join(current_dir, "models"))
-            if tts_engine == "GTTS":
+            elif tts_engine == "GTTS":
                 self.engine = GTTSEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
             else:
                 self.engine = SystemEngine()
