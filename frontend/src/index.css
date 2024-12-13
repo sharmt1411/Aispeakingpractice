@@ -40,10 +40,38 @@
   }
 }
 
-.animate-gradient-shift {
+/* .animate-gradient-shift {
   background-size: 200% 200%;
   animation: gradient-shift 15s ease infinite;
+} */
+
+.animate-gradient-shift  {
+  /* 启用硬件加速 */
+  transform: translateZ(0);
+  will-change: background-position;
+  
+  /* 降低动画频率和范围 */
+  background-size: 200% 200%; /* 减小范围 */
+  animation: gradient-shift 60s steps(120) infinite; /* 降低帧率，增加时间 */
 }
+
+/* 在移动设备上禁用 */
+@media (max-width: 768px) {
+  .animate-gradient-shift  {
+    animation: none;
+    background-size: 100% 100%;
+  }
+}
+
+/* 用户开启省电模式时禁用 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-shift  {
+    animation: none;
+    background-size: 100% 100%;
+  }
+}
+
+
 
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
