@@ -52,9 +52,9 @@ class STTService(ServiceInstance):
         # self.result_queue = result_queue
         # self.session_id = session_id  # 用于区分不同会话
 
-        self.end_of_sentence_detection_pause = 1  # 0.45，需要权衡转写时间，等待越长会导致延迟越高
-        self.unknown_sentence_detection_pause = 0.7
-        self.mid_sentence_detection_pause = 3.0  # 句子中的停顿，以...结尾的句子，可以适当多等待一会，默认为2
+        self.end_of_sentence_detection_pause = 0.45  # 0.45，需要权衡转写时间，等待越长会导致延迟越高
+        self.unknown_sentence_detection_pause = 1  # 0.7
+        self.mid_sentence_detection_pause = 2.0  # 句子中的停顿，以...结尾的句子，可以适当多等待一会，默认为2
 
         # 句子断句判断时间，post_speech_silence_duration，超过这个时间的静音才认为是完整句子
         # self.stop_event = threading.Event()
@@ -66,15 +66,15 @@ class STTService(ServiceInstance):
             'use_microphone': False,
             'spinner': False,
             'model': 'tiny',  # 'model': 'distil-medium-en, distil-large-v3''large-v2',
-            'realtime_model_type': 'distil-small.en',  # 'distil-small.en',  # or tiny.en small.en or distil-small.en or ...
+            'realtime_model_type': 'small.en',  # 'distil-small.en',  # or tiny.en small.en or distil-small.en or ...
             'language': 'en',
-            'silero_sensitivity': 0.2,  # 0-1，0最不敏感，需要很大人声才能识别
-            'webrtc_sensitivity': 3,
+            'silero_sensitivity': 0.2,  # 0.2 0-1，  0最不敏感，需要很大人声才能识别
+            'webrtc_sensitivity': 2,  # 3 ranging from 0 (least aggressive / most sensitive) to 3 (most aggressive, least sensitive)
             'post_speech_silence_duration': self.unknown_sentence_detection_pause,
             'min_length_of_recording': 0.8,
-            'min_gap_between_recordings': 0,
+            'min_gap_between_recordings': 0,   # 0
             'enable_realtime_transcription': True,
-            'realtime_processing_pause': 0.02,  # 0.02
+            'realtime_processing_pause': 0.02,  # 0.02 0.1很慢  影响on_realtime_transcription_stabilized的实时转录延迟，越小延迟越低,Specifies the time interval in seconds after a chunk of audio gets transcribed. Lower values will result in more "real-time" (frequent) transcription updates but may increase computational load.
             'on_realtime_transcription_update': None,  # text_detected,  # 每次实时转录有更新时调用
             'on_realtime_transcription_stabilized': self.on_realtime_transcription_stabilized,
             'on_transcription_start': self.on_transcription_start,
@@ -88,7 +88,7 @@ class STTService(ServiceInstance):
             'beam_size': 3,
             'beam_size_realtime': 3,
             'initial_prompt': (
-                "End incomplete sentences with ellipses.\n"
+                "The speaker from China speaks with an accent.End incomplete sentences with ellipses.\n"
                 "Examples:\n"
                 "Complete: The sky is blue.\n"
                 "Incomplete: When the sky...\n"
@@ -152,7 +152,6 @@ class STTService(ServiceInstance):
         if self.recorder is None:
             self.recorder = AudioToTextRecorder(**self.recorder_config)   # 运行时间比较长，需要单独线程运行
         print(f"服务实例，STT模型载入完毕，{self.uid},{time.time()}")
-        # print(logger.handlers)
         self.return_queue.put((self.uid, "message", "readySTT"))
         print(f"STT-run-return, {self.uid}, message, readySTT")
 
@@ -244,19 +243,21 @@ class STTService(ServiceInstance):
         在实时转录有稳定更新时调用，保存相关文本（文本为累积的最新段的实时转录），配置分段判断阈值
         同时返回实时结果
         """
+        deadlock_count = 3/self.recorder_config['realtime_processing_pause']  # 每0.02转写一次150, 0.1 30
         text = self.preprocess_text(text)
         if self.prev_stabilize_text == text:
             self.prev_stabilize_count += 1
         else:
             self.prev_stabilize_count = 0
-        if self.prev_stabilize_count >= 10:
+        if self.prev_stabilize_count >= deadlock_count:    # 15
             print("！！！实时转录结尾超时！！，中止")
-            self.input_data.put((self.uid, "TTS", bytearray(22050)))   # 防止输入时提前断开造成数据不完整，转写线程会持续等待数据，导致卡死
             # self.recorder.interrupt_stop_event.set()  # 停止实时转录
             # self.recorder.frames.clear()
-            if self.prev_stabilize_count == 10:    # 连续10次相同结果，认为是整句结束，并且发送后，后续不再重复放入队列
+            if self.prev_stabilize_count == deadlock_count:    # 连续10次相同结果，认为是整句结束，并且发送后，后续不再重复放入队列
                 self.prev_result = self.prev_text
                 self.return_queue.put((self.uid, "STT-result", self.prev_text))       # 解决卡住问题？
+                self.input_data.put((self.uid, "TTS", bytearray(22050)))  # 防止输入时提前断开造成数据不完整，转写线程会持续等待数据，导致卡死
+
             return
         self.prev_stabilize_text = text
 

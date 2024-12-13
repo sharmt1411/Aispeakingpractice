@@ -43,35 +43,35 @@ class TTSService(ServiceInstance):
         print(f"TTS服务实例线程start thread：{self.uid}")
         print("current-thread",threading.current_thread())
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            print(f"TTS服务实例当前目录：{current_dir}，{time.time()}")
-            # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
-            tts_engine = config.TTS_ENGINE
-            print(f"TTS服务实例选择的引擎：{tts_engine}")
-            if tts_engine == "Coqui":
-                self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
-                                          local_models_path=os.path.join(current_dir, "models"))
-            elif tts_engine == "GTTS":
-                self.engine = GTTSEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
-            else:
-                self.engine = SystemEngine()
-
-            voices = self.engine.get_voices()
-            # print(f"TTS服务实例voices list：{voices}")
-            if isinstance(self.engine, CoquiEngine) :
-                self.stream_info = [8, 1, 24000]  # 获取音频流信息,宽度值8为int16，8为float32
-                voice = "female_arabic"
-            else:
-                self.stream_info = list(self.engine.get_stream_info())  # 获取音频流信息,宽度值8为int16，8为float32
-                voice = voices[1]
-            self.engine.set_voice(voice)
-
-            print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice},{time.time()}")
-
-            self.stream = TextToAudioStream(self.engine, log_characters=False,
-                                         on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
-                                         on_audio_stream_start=lambda : print(f"audio stream started{time.time()}"),
-                                       )
+            # current_dir = os.path.dirname(os.path.abspath(__file__))
+            # print(f"TTS服务实例当前目录：{current_dir}，{time.time()}")
+            # # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            # tts_engine = config.TTS_ENGINE
+            # print(f"TTS服务实例选择的引擎：{tts_engine}")
+            # if tts_engine == "Coqui":
+            #     self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
+            #                               local_models_path=os.path.join(current_dir, "models"))
+            # elif tts_engine == "GTTS":
+            #     self.engine = GTTSEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            # else:
+            #     self.engine = SystemEngine()
+            #
+            # voices = self.engine.get_voices()
+            # # print(f"TTS服务实例voices list：{voices}")
+            # if isinstance(self.engine, CoquiEngine) :
+            #     self.stream_info = [8, 1, 24000]  # 获取音频流信息,宽度值8为int16，8为float32
+            #     voice = "female_arabic"
+            # else:
+            #     self.stream_info = list(self.engine.get_stream_info())  # 获取音频流信息,宽度值8为int16，8为float32
+            #     voice = voices[1]
+            # self.engine.set_voice(voice)
+            #
+            # print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice},{time.time()}")
+            #
+            # self.stream = TextToAudioStream(self.engine, log_characters=False,
+            #                              on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
+            #                              on_audio_stream_start=lambda : print(f"audio stream started{time.time()}"),
+            #                            )
 
             self.input_data = queue.Queue()  # 清空输入队列
             if self.thread is None or not self.thread.is_alive():
@@ -90,6 +90,40 @@ class TTSService(ServiceInstance):
 
     def run(self):
         self.state = ServiceState.BUSY
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            print(f"TTS服务实例当前目录：{current_dir}，{time.time()}")
+            # 选择支持的 engine [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            tts_engine = config.TTS_ENGINE
+            print(f"TTS服务实例选择的引擎：{tts_engine}")
+            if tts_engine == "Coqui" :
+                self.engine = CoquiEngine(voices_path=os.path.join(current_dir, "coqui_voice"),
+                                          local_models_path=os.path.join(current_dir, "models"))
+            elif tts_engine == "GTTS" :
+                self.engine = GTTSEngine()  # [SystemEngine(),  CoquiEngine(), GTTSEngine(), OpenAIEngine()]
+            else :
+                self.engine = SystemEngine()
+
+            voices = self.engine.get_voices()
+            # print(f"TTS服务实例voices list：{voices}")
+            if isinstance(self.engine, CoquiEngine) :
+                self.stream_info = [8, 1, 24000]  # 获取音频流信息,宽度值8为int16，8为float32
+                voice = "female_arabic"
+            else :
+                self.stream_info = list(self.engine.get_stream_info())  # 获取音频流信息,宽度值8为int16，8为float32
+                voice = voices[1]
+            self.engine.set_voice(voice)
+
+            print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice},{time.time()}")
+
+            self.stream = TextToAudioStream(self.engine, log_characters=False,
+                                            on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
+                                            on_audio_stream_start=lambda : print(f"audio stream started{time.time()}"),
+                                            )
+        except Exception as e:
+            print(f"TTS服务实例初始化错误：{str(e)}")
+            # self.state = ServiceState.ERROR
+
         print(">>>>>>>>>TTS-run-current-thread", threading.current_thread().ident, "current-process-id", current_process().ident, flush=True)
 
         print(f"启动TTS服务实例线程：{self.uid}")
@@ -171,7 +205,7 @@ class TTSService(ServiceInstance):
         while self.processing :
             try :
                 item = self.input_data.get(timeout=self.stream_timeout)
-                print(f"TTS-Service-iterating-data", item)
+                print(f"TTS-Service-iterating-data{item}")
                 start_time = time.time()
                 if item[2] == 'end' :
                     self.processing = False

@@ -19,10 +19,12 @@ def register_socket_events(socketio, input_queue, connected_clients, reverse_con
             reverse_connected_clients[sid] = user_id
             input_queue.put((user_id, "TTS", "start"))
             input_queue.put((user_id, "STT", "start"))
+            input_queue.put((user_id, "CHAT", "start"))
             if config.TTS_ENGINE == "Coqui":
                 socketio.emit('TTS-format', [8, 1, 24000], room=sid)
             else:
                 socketio.emit('TTS-format', [8, 1, 22050], room=sid)
+                print(f'WS-handle register emit TTS-format: {config.TTS_ENGINE}')
             # audio_processor.run()   # 会阻塞，直到该线程结束
         except Exception as e :
             print('Error registering for user id:', user_id, e)

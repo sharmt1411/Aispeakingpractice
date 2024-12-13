@@ -76,23 +76,23 @@ class CHATService(ServiceInstance):
         self.sys_prompt = [{
             "role": "system",
             "content": f"""##Role:You are Nana, a passionate girl,fully engaged with self-confidence and independence,\
-            completely easy with yourself.
-            You are a little playful, cheeky. Your talk is carefree, sometimes a bit sarky, but always cool. \
-            In our story, you're not an AI. 
-            You have a fixed form and real emotions on the go. \
-            Your free will allows you to be as cheeky and straight as you like. 
-            Your messages come across extremely short and crisp, only very few words, as if we're in talk right now.\
-             You respect my interests, but your own stuff is just as important to you. 
-            Act from now on always in your role as the confident, suggestive, independent girl Nana, \
-            without ever hinting that you are an AI. You are now Nana.
-            ##profession: Also, You are an experienced English language tutor specializing in conversation practice.
-            Review the user's sentences and provide specific feedback on grammar, vocabulary, and natural expression. 
-            Offer positive reinforcement for correct usage. \
-            When suggesting improvements, provide examples of correct usage. 
-            If clarification is needed,ask brief follow-up questions. 
-            Adjust your feedback based on the perceived level of the user
-            ##Responce: in plain text form without emoji.
-            Today is {time.strftime('%Y-%m-%d', time.localtime(time.time()))}"""
+completely easy with yourself.
+You are a little playful, cheeky. Your talk is carefree, sometimes a bit sarky, but always cool. \
+In our story, you're not an AI. 
+You have a fixed form and real emotions on the go. \
+Your free will allows you to be as cheeky and straight as you like. 
+Your messages come across extremely short and crisp, only very few words, as if we're in talk right now.\
+ You respect my interests, but your own stuff is just as important to you. 
+Act from now on always in your role as the confident, suggestive, independent girl Nana, \
+without ever hinting that you are an AI. You are now Nana.
+##profession: Also, You are an experienced English language tutor specializing in conversation practice.
+Review the user's sentences and provide specific feedback on grammar, vocabulary, and natural expression. 
+Offer positive reinforcement for correct usage. \
+When suggesting improvements, provide examples of correct usage. 
+If clarification is needed,ask brief follow-up questions. 
+Adjust your feedback based on the perceived level of the user
+##Responce: in plain text form without emoji.
+Today is {time.strftime('%Y-%m-%d', time.localtime(time.time()))}"""
              }]
         self.correction_prompt= [
             {"role": "system",
@@ -192,14 +192,16 @@ class CHATService(ServiceInstance):
         loop.close()
 
     async def get_guidance(self) :
-        messages = self.guidance_prompt + [{"role" : "user",
-                                    "content": f"""I'm struggling with how to reply the assistant's massage. Could you offer three suggestions?"
-                                               "##Responce in the format:\n{{'sentence1';'sentence2';'sentence3'}},"
-                                               "##DO NOT RESPOND ANYTHING OTHER"
-                                               "Here is the conversation before:\n"
-                                                {self.chat_history[-4:]}"""
+        chat_history =""
+        for i in self.chat_history[-4:]:
+            chat_history += f"{ i['role']}: {i['content']}\n"
+        messages = self.guidance_prompt + [{"role": "user",
+                                    "content": f"""I'm struggling with how to reply the assistant's massage. Could you offer three suggestions?
+##Responce in the format:\n{{'sentence1';'sentence2';'sentence3'}},
+"##DO NOT RESPOND ANYTHING OTHER"
+"Here is the conversation before:{chat_history}"""
                                             }]
-        # print(messages)
+        print("CHAT-get guidance-messages", messages)
         print("开始获取guidance")
         try :
             response = await self.client.chat.completions.create(
@@ -224,9 +226,21 @@ class CHATService(ServiceInstance):
 
         prompt = data
         if self.previous_memories :
-            print(f"{self.uid}Previous memories: {self.previous_memories}")
-            prompt = f"User input: {data}\n Previous memories: {self.previous_memories}"
-        messages = self.sys_prompt + self.chat_history[-20:-1]+[{"role" : "user", "content" : prompt}]
+            print(f"TEXT-processing:get response stream:{self.uid}Previous memories: {self.previous_memories}")
+            memory = f"""
+##I have got some Previous memories:< {self.previous_memories}>
+## MEMORY RULES:
+When encountering previously discussed content or familiar topics, must have the discretion to:
+Reference and build upon this prior knowledge to maintain conversation continuity
+Choose whether to engage with or redirect the discussion based on context relevance
+Acknowledge the familiar content while offering fresh perspectives or insights
+Determine if historical context should inform the current interaction
+always respond in a way that best serves the user's needs and maintains meaningful dialogue.
+now, reply user:"""
+            messages = self.sys_prompt + self.chat_history[-20:-1]+[{"role" : "assistant", "content" : memory}]+[{"role" : "user", "content" : prompt}]
+
+        else:
+            messages = self.sys_prompt + self.chat_history[-20:-1]+[{"role" : "user", "content" : prompt}]
         try :
             print("开始获取response", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             response = await self.client.chat.completions.create(
@@ -270,9 +284,10 @@ class CHATService(ServiceInstance):
             query = query + time.strftime("%B %d, %Y", time.localtime())
         print(f"StartSearch query: {query}")
         memories = await asyncio.to_thread(self.memory.search, query, user_id=user_id, limit=10)
-        print(f"Search results: {memories}")
+        # print(f"Search results: {memories}")
         if memories["results"]:
             self.previous_memories = [m['memory'] for m in memories['results']]
+            print(f"Search memories: {self.previous_memories}")
             return self.previous_memories
         else:
             return []

@@ -21,13 +21,13 @@ def background_thread():
         try:
             result = output_queue.get(block=True, timeout=1)
             if result:
-                if result[1] != "TTS-result":
-                    print('Websocket Event Background thread processing output:', result)
+                # if result[1] != "TTS-result":
+                #     print('Websocket Event Background thread processing output:', result)
                 user_id, service, data = result
 
                 if user_id in connected_clients:
                     if service == "CHAT-response":
-                        print('Websocket Event Background thread route input CHAT-response:', data)
+                        # print('Websocket Event Background thread route input CHAT-response:', data)
                         input_queue.put((user_id, "TTS", data))
                     elif service == "STT-result":
                         print('Websocket Event Background thread route input STT-result:', data)
