@@ -7,7 +7,7 @@ from multiprocessing import current_process
 from typing import Any
 from abc import ABC, abstractmethod
 
-import torch
+from torch.cuda import empty_cache
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -147,7 +147,7 @@ class ServiceInstance(ABC):
             if self.state == ServiceState.DESTROYED:
                 print(f"Service-instance：Service {self.uid} destroyed.")
                 self.stop_event.set()
-                torch.cuda.empty_cache()
+                empty_cache()
                 # if self.thread and self.thread.is_alive():
                 #     self.thread.join(timeout=2)
         # self.state = ServiceState.DESTROYED

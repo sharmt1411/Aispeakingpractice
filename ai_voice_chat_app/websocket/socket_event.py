@@ -1,7 +1,7 @@
 import threading
 import config
 
-from flask import Flask, request
+from flask import request
 
 
 def register_socket_events(socketio, input_queue, connected_clients, reverse_connected_clients, connected_clients_lock):

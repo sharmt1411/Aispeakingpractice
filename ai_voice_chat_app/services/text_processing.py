@@ -7,8 +7,8 @@ import time
 import os
 os.environ['MEM0_TELEMETRY'] = "false"   # disable telemetry .venv/Lib/site-packages/mem0/memory/telemetry.py
 
-from openai import OpenAI, AsyncOpenAI
-from mem0 import Memory, AsyncMemoryClient
+from openai import AsyncOpenAI
+from mem0 import Memory
 
 
 from .service_instance import ServiceInstance, ServiceState
