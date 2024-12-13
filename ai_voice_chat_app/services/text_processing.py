@@ -267,7 +267,7 @@ class CHATService(ServiceInstance):
     async def search_memories(self, query, user_id):
 
         if not self.previous_memories:
-            query = query + time.strftime("%Y-%m-%d", time.localtime())
+            query = query + time.strftime("%B %d, %Y", time.localtime())
         print(f"StartSearch query: {query}")
         memories = await asyncio.to_thread(self.memory.search, query, user_id=user_id, limit=10)
         print(f"Search results: {memories}")
