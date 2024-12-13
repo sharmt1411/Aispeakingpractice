@@ -13,7 +13,8 @@ const AUDIO_CONFIG = {
 };
 
 // 创建socket实例
-const socket = io('http://localhost:5000', {
+const socket = io(window.location.origin, {
+// const socket = io('http://localhost:5000', {  
   transports: ['websocket'],
   reconnectionAttempts: Infinity,
   reconnectionDelay: 1000,
@@ -26,35 +27,44 @@ const socket = io('http://localhost:5000', {
 
 const VoiceChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Hello! How can I help you today?", sender: "other" },
+    { id: 1, text: "Hey! How can I assist you today?", sender: "other" },
   ]);
  
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);   // 录音状态
+  const [isCalling, setIsCalling] = useState(false);  //拨号状态
   const [isReadyToTalk, setIsReadyToTalk] = useState(false);
+  
+
   // message 显示区域
   const [statusMessage, setStatusMessage] = useState('');
   const [chatGuidance, setChatGuidance] = useState(['遇到不认识的单词，可以直接拼写字母',
     '不直到怎么聊，可以试试照着这里读','语音识别不准，可能是发音有问题，可以针对强化~']);
 
-  const isRecordingRef = useRef(false);
+  const isRecordingRef = useRef(false);     // 录音状态
+  const isCallingRef = useRef(false);
   const isReadyToTalkRef = useRef(false);
+  const isReadyTTSRef = useRef(false);
+  const isReadySTTRef = useRef(false);
+
+
   const lastTextRef = useRef('');
   const audioContextRef = useRef<AudioContext | null>(null);
   const playbackContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
-  const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);   // 音频播放节点
   const userId = useRef<string>("test-user-1");
   const audioFormatRef = useRef<AudioFormat | null>(null);  // 存储音频格式信息
+  // const isInitialConnection = useRef(true);  // 是否是初始连接
+  const isPlayingRef = { current: false };  // 拨号音乐是否播放
 
   const sampleRateRef = useRef<number>(22050);   // 返回音频采样率
-
+  const phoneCallRef = useRef<HTMLAudioElement | null>(null);  // 拨号音乐
+  const buttonbounceRef = useRef(false)    // 按钮抖动
   // 添加环形缓冲区相关状态
-  const BUFFER_SIZE = 22050 * 20; // 固定缓冲区大小：22050Hz * 20秒
-  const CHUNK_SIZE = 512; // 每次处理的采样点数
-  // const circularBufferRef = useRef<Float32Array>(new Float32Array(BUFFER_SIZE));
+
   const writePositionRef = useRef<number>(0);
   const readPositionRef = useRef<number>(0);
   const bufferedSamplesRef = useRef<number>(0);
@@ -63,7 +73,7 @@ const VoiceChat: React.FC = () => {
 
   // 初始化录音（麦克风）音频上下文和处理器
   const initAudioContext = useCallback(async () => {
-    console.log('Initializing audio context...', {
+    console.log('Initializing audio context...', new Date().toISOString() ,{
       existing: {
         audioContext: !!audioContextRef.current,
         workletNode: !!workletNodeRef.current,
@@ -133,7 +143,7 @@ const VoiceChat: React.FC = () => {
         workletNode.port.onmessage = (event) => {
           const { type, data, format } = event.data;
           
-          if (type === 'audioData' && isRecordingRef.current && isReadyToTalkRef.current && socket.connected) {
+          if (type === 'audioData' && isCallingRef.current && isReadyToTalkRef.current && socket.connected) {
             try {
               socket.emit('audio_stream', {
                 user_id: userId.current,
@@ -160,7 +170,7 @@ const VoiceChat: React.FC = () => {
         console.log('Audio context resumed');
       }
 
-      console.log('Audio initialization completed successfully', {
+      console.log('Audio initialization completed successfully', new Date().toISOString() ,{
         contextState: audioContextRef.current.state,
         hasWorkletNode: !!workletNodeRef.current,
         hasStream: !!streamRef.current
@@ -184,13 +194,25 @@ const VoiceChat: React.FC = () => {
 
   const initplaybackContext = useCallback(async (format: AudioFormat) => {
     // 当TTS-format 收到时，playbackContext为空或者采样率不同时，创建新的AudioContext
-    if (playbackContextRef.current) {
+    console.log('IPb-Initializing playback context...')
+    if (playbackContextRef.current && playbackContextRef.current.sampleRate !== format.rate) {
+      console.log('IPB-Sample rate mismatch, Closing existing playback AudioContext...');
       playbackContextRef.current.close();
+    }
+    if (playbackContextRef.current && playbackContextRef.current.sampleRate === format.rate)  {
+      console.log('IPB-Playback AudioContext already initialized and running,return');
+      console.log('IPB-Playback AudioContext state:', playbackContextRef.current.state);
+      if (playbackContextRef.current.state === 'suspended') {
+        console.log('IPB-Resuming suspended playback AudioContext...');
+        await playbackContextRef.current.resume();
+        console.log('IPB-Playback AudioContext resumed');
+      }
+      return;   // 后台播放节点，已经统一按照float32格式单声道传入，只是采样率可能变化
     }
     playbackContextRef.current = new AudioContext({
       sampleRate: format.rate
     });
-    console.log('Created new playback AudioContext:', {
+    console.log('IPB-Created new playback AudioContext:', {
       sampleRate: playbackContextRef.current.sampleRate,
       state: playbackContextRef.current.state,
       baseLatency: playbackContextRef.current.baseLatency,
@@ -227,13 +249,13 @@ const VoiceChat: React.FC = () => {
       // 存储 WorkletNode 引用
       audioWorkletNodeRef.current = workletNode;
   
-      console.log('Playback AudioWorklet initialized successfully', {
+      console.log('IPB-Playback AudioWorklet initialized successfully', {
         sampleRate: playbackContextRef.current.sampleRate,
         state: playbackContextRef.current.state
       });
   
     } catch (error) {
-      console.error('Failed to initialize AudioWorklet:', error);
+      console.error('IPB-Failed to initialize AudioWorklet:', error);
       if (playbackContextRef.current) {
         playbackContextRef.current.close();
         playbackContextRef.current = null;
@@ -248,6 +270,134 @@ const VoiceChat: React.FC = () => {
   }, []);
 
 
+  const playphoneCall = useCallback(() => {
+    // 使用静态变量追踪是否已经播放
+    console.log('playphoneCall-Playing phone call...');
+    try {
+      // 如果已经在播放，直接返回
+      if (isPlayingRef.current) {
+        console.log('playphoneCall-Phone call is already playing');
+        return Promise.resolve();
+      }
+  
+      if (phoneCallRef.current) {
+        console.log('playphoneCall-Stopping previous phone call...');
+        phoneCallRef.current.pause();
+        phoneCallRef.current.currentTime = 0;
+      }
+  
+      phoneCallRef.current = new Audio('dialsound.mp3');
+      
+      return new Promise<void>((resolve, reject) => {
+        // 确保 phoneCallRef.current 非空
+        if (!phoneCallRef.current) {
+          reject(new Error('playphoneCall-Failed to create audio object'));
+          return;
+        }
+        console.log('playphoneCall-phoneCallRef.current:', phoneCallRef.current);
+        // 标记已经开始播放
+        isPlayingRef.current = true;
+  
+        let stopTimer: NodeJS.Timeout;
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaElementSource(phoneCallRef.current);
+        const gainNode = audioContext.createGain();
+        
+        source.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+  
+        // 渐进式淡出函数
+        const fadeOut = (duration = 1000) => {
+          console.log('playphoneCall-Fading out...');
+          if (!phoneCallRef.current) {
+            isPlayingRef.current = false;
+            resolve(); 
+            return;
+          }
+  
+          const startTime = audioContext.currentTime;
+          gainNode.gain.setValueAtTime(1, startTime);
+          gainNode.gain.linearRampToValueAtTime(0, startTime + duration / 1000);
+  
+          setTimeout(() => {
+            if (phoneCallRef.current) {
+              phoneCallRef.current.pause();
+              phoneCallRef.current.currentTime = 0;
+            }
+            // 重置播放状态
+            isPlayingRef.current = false;
+            resolve();
+          }, duration);
+        };
+        
+        const checkReadyToTalk = () => {
+          console.log('playphoneCall-Checking if ready to talk...');
+          clearTimeout(stopTimer);
+          if (!isCallingRef.current) {
+            console.log('playphoneCall-Not calling, stopping...');
+            if (phoneCallRef.current) {
+              phoneCallRef.current.pause();
+              phoneCallRef.current.currentTime = 0;
+            }
+            isPlayingRef.current = false;
+            resolve();
+            return;
+          }
+          if ((isRecordingRef.current && phoneCallRef.current)) {
+            clearTimeout(stopTimer);
+            console.log('playphoneCall-Ready to talk, starting fade out...');
+            fadeOut(); // 使用渐进式淡出
+          } else {
+            // 如果还未就绪，继续检查
+            console.log('playphoneCall-Not ready to talk, checking again...');
+            stopTimer = setTimeout(checkReadyToTalk, 500);
+          }
+        };
+
+        console.log('playphoneCall-Phone call starting to play through...');
+        if (phoneCallRef.current) {
+          phoneCallRef.current.play()
+            .then(() => {
+              // 开始监听 isReadyToTalk 状态
+              stopTimer = setTimeout(checkReadyToTalk, 500);
+            })
+            .catch(error => {
+              // 播放失败时重置状态
+              isPlayingRef.current = false;
+              reject(error);
+            });
+        }
+         
+  
+        // phoneCallRef.current.oncanplaythrough = () => {
+        //   console.log('playphoneCall-Phone call can play through...');
+        //   if (phoneCallRef.current) {
+        //     phoneCallRef.current.play()
+        //       .then(() => {
+        //         // 开始监听 isReadyToTalk 状态
+        //         stopTimer = setTimeout(checkReadyToTalk, 500);
+        //       })
+        //       .catch(error => {
+        //         // 播放失败时重置状态
+        //         isPlayingRef.current = false;
+        //         reject(error);
+        //       });
+        //   }
+        // };
+  
+        phoneCallRef.current.onerror = (error) => {
+          // 错误时重置状态
+          isPlayingRef.current = false;
+          reject(error);
+        };
+      });
+    } catch (error) {
+      console.error('Failed to load phone call audio:', error);
+      return Promise.reject(error);
+    }
+  }, []);
+
+
   // 连接WebSocket
   const connectSocket = useCallback(() => {
     console.log('Attempting to connect...');
@@ -255,6 +405,7 @@ const VoiceChat: React.FC = () => {
       socket.connect();
     }
   }, []);
+
 
   // 开始注册流程的函数
   const startRegistration = useCallback(() => {
@@ -266,18 +417,72 @@ const VoiceChat: React.FC = () => {
       console.log('Sending registration with user ID:', userId.current);
       socket.emit('register', { user_id: userId.current });
     }
-  }, [isConnected, connectSocket]);
+  }, [isConnected, connectSocket]);    
 
-  // 监听录音状态变化，发送给audio-processor 同步
+
+  // 监听录音状态变化，发送给audio-processor 同步,并且控制播放
   useEffect(() => {
+    console.log('isRecording State cahnged, isRecordingRef.current:', isRecordingRef.current, 'isRecording:', isRecording);
+    
     if (workletNodeRef.current) {
-      console.log('Sending recording state to AudioWorklet:', isRecordingRef.current);
+      console.log('Sending recording state to recorderAudioWorklet:', isRecordingRef.current);
       workletNodeRef.current.port.postMessage({
         type: 'setRecording',
         value: isRecordingRef.current
       });
     }
+    if (audioWorkletNodeRef.current) {
+      console.log('Stoprecording,Sending setplaying message to playbackAudioWorklet', isRecordingRef.current);
+      audioWorkletNodeRef.current?.port.postMessage({
+        type: 'setPlaying',
+        value: isRecordingRef.current
+      });
+      // playbackContextRef.current?.suspend();
+      // console.log("playbackContext state suspended", playbackContextRef.current?.state);
+
+    }
   }, [isRecording]);
+
+
+  // 准备好后开始录音
+  useEffect(() => {
+    if (isReadyToTalkRef.current && isCallingRef.current) { 
+      console.log('>>>>UE-isreadytotalk and isCalling, prepare to change isRecording to true...');
+      if (workletNodeRef.current) {
+        setTimeout(() => {
+          if (workletNodeRef.current) {
+            setStatusMessage('Ready');
+            setIsRecording(true);
+            isRecordingRef.current = true;
+          }
+        }, 5000);
+        
+        // setStatusMessage('Ready');
+        // setIsRecording(true);
+        // isRecordingRef.current = true;
+        
+        // if(!isInitialConnection.current) {
+        //   console.log('None Initializing call, auto recording');
+        //   setIsRecording(true);
+        //   isRecordingRef.current = true;
+        // } else {
+        //   console.log('Initializing call, no auto recording');
+        //   // isInitialConnection.current = false;
+        // }
+        // 由播放逻辑中侦听实现
+        // if (phoneCallRef.current) {
+        //   phoneCallRef.current.pause();
+        //   phoneCallRef.current.currentTime = 0;
+        // }
+        
+      }
+    } else {
+      console.log('isRecording conditions not met, isReadyToTalkRef.current:', isReadyToTalkRef.current, "useEffect");
+      isRecordingRef.current = false;
+      setIsRecording(false);
+    }
+  }, [isReadyToTalk, isCalling]);
+
 
   // Socket 连接管理
   useEffect(() => {
@@ -317,21 +522,61 @@ const VoiceChat: React.FC = () => {
       console.log('Received message:', message);
       
       if (message === 'readySTT') {
-        console.log('Ready to receive STT-realtime data');
-        setIsReadyToTalk(true);
-        isReadyToTalkRef.current = true;
-        initAudioContext().catch(error => {
-          console.error('Failed to initialize audio:', error);
-          setIsReadyToTalk(false);
-          isReadyToTalkRef.current = false;
-        });
+        // console.log('Ready to receive STT-realtime data');
+        isReadySTTRef.current = true;
+        if (isReadyTTSRef.current) {
+          console.log('Ready to talk, init AudioContext',new Date().toISOString());
+          
+          setIsReadyToTalk(true);
+          isReadyToTalkRef.current = true;
+          initAudioContext().catch(error => {
+            console.error('Failed to initialize audio:', error);
+            setIsReadyToTalk(false);
+            isReadyToTalkRef.current = false;
+          });
+          if (audioFormatRef.current) {
+            initplaybackContext(audioFormatRef.current).catch(error => {
+              console.error('Failed to initialize playback audio:', error);
+              setIsReadyToTalk(false);
+              isReadyToTalkRef.current = false;
+            });
+          }
+          // console.log('Ready to talk',new Date().toISOString());
+        }
       }
+          
+
+      if (message === 'readyTTS') {
+        // console.log('Ready to receive TTS data');
+        isReadyTTSRef.current = true;
+        if (isReadySTTRef.current) {
+          console.log('Ready to talk, init AudioContext', new Date().toISOString());
+          setIsReadyToTalk(true);
+          isReadyToTalkRef.current = true;
+          initAudioContext().catch(error => {
+            console.error('Failed to initialize audio:', error);
+            setIsReadyToTalk(false);
+            isReadyToTalkRef.current = false;
+          });
+          if (audioFormatRef.current) {
+            initplaybackContext(audioFormatRef.current).catch(error => {
+              console.error('Failed to initialize playback audio:', error);
+              setIsReadyToTalk(false);
+              isReadyToTalkRef.current = false;
+            });
+          }
+          // console.log('Ready to talk', new Date().toISOString());
+        }
+      }
+
+      if (message === 'start loading model...')
+        message = 'Calling Nana...';
       setStatusMessage(message);
     };
 
     // 处理录音的实时语音转文本,用户输入
     const handleSTTRealtime = (data: any) => {
-      console.log('Received STT-realtime data:', data);
+      // console.log('Received STT-realtime data:', data);
       // 检查数据格式并提取文本
       const text = typeof data === 'string' ? data : data.text;
       // 分为更新，和新建聊天气泡
@@ -371,10 +616,10 @@ const VoiceChat: React.FC = () => {
     };
 
     const handleChatResponse = (data: string) => {
-      console.log('Received CHAT-response:', data);
+      // console.log('Received CHAT-response:', data);
       
       if (data === 'begin') {
-        console.log('Assistant begin saying something...');
+        console.log('Chat responce Assistant begin saying something...');
         setMessages((prevMessages) => [...prevMessages, { id: prevMessages.length + 1, 
           text: '', sender: 'other' }]);        // 更新当前显示的文本
         return
@@ -396,7 +641,7 @@ const VoiceChat: React.FC = () => {
     const handleChatGuidance = (data: string) => {
       console.log('Received CHAT-guidance:', data);
       try {
-        const guidanceReg = /\{(.*?)\}/s;  // 添加 s 标志，允许 . 匹配换行符
+        const guidanceReg = /\{(.*?)\}/;  // 添加 s 标志，允许 . 匹配换行符
         const match = data.match(guidanceReg);
         if (match) {
           const content = match[1];
@@ -455,7 +700,9 @@ const VoiceChat: React.FC = () => {
       }
       // 打印前几个字节用于调试
       // console.log('First few bytes:', Array.from(audioData.slice(0, 16)));
-      placeAudioChunk(audioData);
+      if (isCallingRef.current) {
+        placeAudioChunk(audioData);
+      }
     };
 
     // 注册事件监听器
@@ -502,60 +749,59 @@ const VoiceChat: React.FC = () => {
     };
   }, [connectSocket, initAudioContext, initplaybackContext]); // connectSocket, initAudioContext]);
 
-  // 音频状态管理
-  useEffect(() => {
-    if (!isReadyToTalkRef.current && audioContextRef.current) {
-      console.log('Not ready to talk, cleaning up audio resources...');
-      if (workletNodeRef.current) {
-        workletNodeRef.current.disconnect();
-        workletNodeRef.current = null;
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-      if (audioContextRef.current?.state !== 'closed') {
-        audioContextRef.current.close().catch(console.error);
-        audioContextRef.current = null;
-      }
-    } else {
-      console.log('Ready to talk');
-      setStatusMessage('Ready to talk');
-    }
-  }, [isReadyToTalk]);
 
   // 录音控制函数
   const toggleRecording = async () => {
+    if (buttonbounceRef.current) {
+      return;
+    }
+    
     try {
-      if (!isReadyToTalk) {
-        console.log('Not ready to talk yet');
-        setStatusMessage('Backend is not ready. Please wait.');
-        return;
-      }
-
-      const newRecordingState = !isRecordingRef.current;
-      console.log('Toggling isrecording state to:', newRecordingState);
+      buttonbounceRef.current = true;
+      const newCallingState = !isCallingRef.current;
+      console.log('>>>Toggling recording...', newCallingState);
+      // isInitialConnection.current = false;  
+      // 点击后取消对isrecording更新后不能自动打开录音的限制，
+      // 原来是防止网页加载后长时间不操作，isreadytalk后自动打开录音
       
-      if (newRecordingState) {
-        // 开始录音前确保音频上下文已初始化
-        if (!audioContextRef.current || !workletNodeRef.current) {
-          console.log('Initializing audio before recording...');
-          await initAudioContext();
-        }
-        startRegistration();
+      if (newCallingState) {
+
+        console.log('Initializing 2audiocontext before recording...');
+        initAudioContext();
+        playbackContextRef?.current?.resume();     // 需用户点击交互后才能启动，其他函数无法启动
+        
+        isCallingRef.current = newCallingState
+        setIsCalling(isCallingRef.current);
+        
+        // 要开始录音,先播放拨号音频
+        if (!isReadyToTalkRef.current) {  // 未准备好先注册启动服务
+          console.log('>>>>>>Not ready to talk yet, start registration...');
+          setStatusMessage('Calling Nana...');
+          playphoneCall();      // 在isreadytotalk状态设置后停止
+          startRegistration();
+        } 
+
+      } else {
+        // 停止录音
+        isReadyToTalkRef.current = false;
+        setIsReadyToTalk(false);
+        isReadySTTRef.current = false;
+        isReadyTTSRef.current = false;
+        isCallingRef.current = false;
+        setIsCalling(false);
+        setStatusMessage('Disconnect');
       }
 
-
-      // 更新状态
-      setIsRecording(newRecordingState);
-      isRecordingRef.current = newRecordingState;  // 触发状态变化
 
     } catch (error) {
       console.error('Error toggling recording:', error);
       setIsRecording(false);
       isRecordingRef.current = false;
+    } finally {
+      buttonbounceRef.current = false;
     }
   };
+
 
   // 音频播放函数,放入环形缓冲区
   const placeAudioChunk = async (audioData: Uint8Array) => {
@@ -598,6 +844,7 @@ const VoiceChat: React.FC = () => {
     }
   };
 
+
   // 修改清理函数
   useEffect(() => {
     return () => {
@@ -613,6 +860,12 @@ const VoiceChat: React.FC = () => {
         playbackContextRef.current.close();
         playbackContextRef.current = null;
       }
+      if (phoneCallRef.current) {
+        phoneCallRef.current.pause();
+        phoneCallRef.current = null;
+      }
+      isPlayingRef.current = false;
+
       writePositionRef.current = 0;
       readPositionRef.current = 0;
       bufferedSamplesRef.current = 0;
@@ -620,12 +873,14 @@ const VoiceChat: React.FC = () => {
     };
   }, []);
 
+
   // 添加音频格式配置接口
   interface AudioFormat {
     width: number;
     channels: number;
     rate: number;
   }
+
 
   interface Message {
     id: number;
@@ -683,16 +938,16 @@ const VoiceChat: React.FC = () => {
         </div>
 
         <div className="flex justify-center mt-6 relative">
-          {isRecording && <AudioVisualizer isActive={isRecording} />}
+          {isCalling && <AudioVisualizer isActive={isCalling} />}
 
           <button
             className={`relative p-4 rounded-full transition-colors duration-300  ${
-              isRecording ? 'bg-red-500 hover:bg-red-600 animate-button-pulse' : 'bg-green-500 hover:bg-green-600'
+              isCalling ? 'bg-red-500 hover:bg-red-600 animate-button-pulse' : 'bg-green-500 hover:bg-green-600'
             }`}
             onClick={toggleRecording}
             // disabled={!isReadyToTalk}
           >
-            {isRecording ? (
+            {isCalling ? (
               <PhoneCall className="w-6 h-6 text-white relative z-10" />
             ) : (
               <PhoneIcon className="w-6 h-6 text-white relative z-10" />
