@@ -218,12 +218,9 @@ class CHATService(ServiceInstance):
 
     async def get_stream_response_chat(self, data) :
         """大模型获取AI流式回复"""
-        if self.chat_history:
-            # 更新记忆，对话不带历史记忆，防止重复消耗token
-            self.chat_history.append({"role" : "user", "content" : data})
-        else :
-            self.chat_history.append([
-                {"role": "user", "content": data + f"Today is {time.strftime('%Y-%m-%d', time.localtime(time.time()))}"}])
+
+        # 更新记忆，对话不带历史记忆，防止重复消耗token
+        self.chat_history.append({"role" : "user", "content" : data})
 
         prompt = data
         if self.previous_memories :
@@ -254,7 +251,7 @@ class CHATService(ServiceInstance):
 
         except Exception as e :
             self.return_queue.put((self.uid, "CHAT-response", "end"))
-            print("获取response失败", e)
+            print("获取response失败-stream", e)
 
             return None
 
@@ -268,6 +265,9 @@ class CHATService(ServiceInstance):
             return []
 
     async def search_memories(self, query, user_id):
+
+        if not self.previous_memories:
+            query = query + time.strftime("%Y-%m-%d", time.localtime())
         print(f"StartSearch query: {query}")
         memories = await asyncio.to_thread(self.memory.search, query, user_id=user_id, limit=10)
         print(f"Search results: {memories}")
