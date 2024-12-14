@@ -58,7 +58,15 @@ class STTService(ServiceInstance):
 
         # 句子断句判断时间，post_speech_silence_duration，超过这个时间的静音才认为是完整句子
         # self.stop_event = threading.Event()
-
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        model_dir = os.path.join(
+            current_dir,
+            "models",
+            "models--Systran--faster-whisper-small.en",
+            "snapshots",
+            "d1d751a5f8271d482d14ca55d9e2deeebbae577f"
+        )
+        print(f"STT-Service, model_dir: {model_dir}")
         self.recorder_config = {
             # 'use_extended_logger': True,
             # 'debug_mode': True,
@@ -66,7 +74,7 @@ class STTService(ServiceInstance):
             'use_microphone': False,
             'spinner': False,
             'model': 'tiny',  # 'model': 'distil-medium-en, distil-large-v3''large-v2',
-            'realtime_model_type': 'small.en',  # 'distil-small.en',  # or tiny.en small.en or distil-small.en or ...
+            'realtime_model_type': model_dir,  # 'tiny',  # 'distil-medium-en',  # 'distil-large-v3', 'large-v2' ,  # 'distil-small.en',  # or tiny.en small.en or distil-small.en or ...
             'language': 'en',
             'silero_sensitivity': 0.2,  # 0.2 0-1，  0最不敏感，需要很大人声才能识别
             'webrtc_sensitivity': 2,  # 3 ranging from 0 (least aggressive / most sensitive) to 3 (most aggressive, least sensitive)
@@ -391,7 +399,7 @@ if __name__ == '__main__':
 
     instance = STTService("test_user", service_name, timeout, idle_timeout, return_queue, callback)
     instance.start_thread()
-    # instance.thread.join()
+    instance.thread.join()
 
     # recorder = AudioToTextRecorder(**recorder_config)
     # recorder = AudioToTextRecorder(

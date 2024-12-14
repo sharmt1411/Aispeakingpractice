@@ -29,8 +29,56 @@ The project mainly integrates functionalities from several famous repositories, 
 ### How to Use
 
 - First, you need to have Python environment installed.
-- Then, download the project code and install related dependencies.
-- Finally, run ai_voice_chat_app/main.py file, open browser and enter http://localhost:5000/ to access the homepage.
+- Then, download the project code and install related dependencies.(if on Linux, you may need to install some dependencies manually `apt-get install python3-dev portaudio19-dev python3-pyaudio`))
+- 'pip install -U realtimetts[all]' 
+- install cuda
+- ### GPU Support with CUDA (recommended)
+
+### Updating PyTorch for CUDA Support
+
+To upgrade your PyTorch installation to enable GPU support with CUDA, follow these instructions based on your specific CUDA version. This is useful if you wish to enhance the performance of RealtimeSTT with CUDA capabilities.
+
+#### For CUDA 11.8:
+To update PyTorch and Torchaudio to support CUDA 11.8, use the following commands:
+
+```bash
+pip install torch==2.5.1+cu118 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118
+```
+
+#### For CUDA 12.X:
+To update PyTorch and Torchaudio to support CUDA 12.X, execute the following:
+
+```bash
+pip install torch==2.5.1+cu121 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+```
+
+Replace `2.5.1` with the version of PyTorch that matches your system and requirements.
+
+### Steps That Might Be Necessary Before
+
+> **Note**: *To check if your NVIDIA GPU supports CUDA, visit the [official CUDA GPUs list](https://developer.nvidia.com/cuda-gpus).*
+
+If you didn't use CUDA models before, some additional steps might be needed one time before installation. These steps prepare the system for CUDA support and installation of the **GPU-optimized** installation. This is recommended for those who require **better performance** and have a compatible NVIDIA GPU. To use RealtimeSTT with GPU support via CUDA please also follow these steps:
+
+1. **Install NVIDIA CUDA Toolkit**:
+    - select between CUDA 11.8 or CUDA 12.X Toolkit
+        - for 12.X visit [NVIDIA CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive) and select latest version.
+        - for 11.8 visit [NVIDIA CUDA Toolkit 11.8](https://developer.nvidia.com/cuda-11-8-0-download-archive).
+    - Select operating system and version.
+    - Download and install the software.
+
+2. **Install NVIDIA cuDNN**:
+    - select between CUDA 11.8 or CUDA 12.X Toolkit
+        - for 12.X visit [cuDNN Downloads](https://developer.nvidia.com/cudnn-downloads).
+            - Select operating system and version.
+            - Download and install the software.
+        - for 11.8 visit [NVIDIA cuDNN Archive](https://developer.nvidia.com/rdp/cudnn-archive).
+            - Click on "Download cuDNN v8.7.0 (November 28th, 2022), for CUDA 11.x".
+            - Download and install the software.
+
+- install pytorch and other see in https://pytorch.org/, if you don't have GPU, you can use CPU version.And use TTS engine like GTTS。
+- And then, run ai_voice_chat_app/main.py file,the first time you run it, it will generate a config file named config.txt, you need to fill in.
+- AND finally,run the main.py file again, open browser and enter http://localhost:5000/ to access the homepage.
 - After running, fill in the related configurations in ai_voice_chat_app/config.txt, most can be applied for free.
 - Then you can happily chat with Nana~ (First run requires downloading about 2G of models, please wait patiently)
 - Note: The project can also be deployed on servers for multi-user conversations. However, currently the original STT library Coqui model hasn't implemented parallelization, so one user needs about 4G VRAM using Coqui.
