@@ -30,23 +30,25 @@ const VoiceChat: React.FC = () => {
     { id: 1, text: "Hey! How can I assist you today?", sender: "other" },
   ]);
  
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState('');
   const [isRecording, setIsRecording] = useState(false);   // 录音状态
   const [isCalling, setIsCalling] = useState(false);  //拨号状态
   const [isReadyToTalk, setIsReadyToTalk] = useState(false);
   
+  const [amplitude, setAmplitude] = useState<Uint8Array>(new Uint8Array());   //设置录音动态变化
+
 
   // message 显示区域
   const [statusMessage, setStatusMessage] = useState('');
   const [chatGuidance, setChatGuidance] = useState(['遇到不认识的单词，可以直接拼写字母',
     '不直到怎么聊，可以试试照着这里读','语音识别不准，可能是发音有问题，可以针对强化~']);
 
+  const isConnectedRef = useRef(false);
   const isRecordingRef = useRef(false);     // 录音状态
   const isCallingRef = useRef(false);
   const isReadyToTalkRef = useRef(false);
   const isReadyTTSRef = useRef(false);
   const isReadySTTRef = useRef(false);
+  const countAmplitude = useRef(0);
 
 
   const lastTextRef = useRef('');
@@ -57,7 +59,6 @@ const VoiceChat: React.FC = () => {
   const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);   // 音频播放节点
   const userId = useRef<string>("test-user-1");
   const audioFormatRef = useRef<AudioFormat | null>(null);  // 存储音频格式信息
-  // const isInitialConnection = useRef(true);  // 是否是初始连接
   const isPlayingRef = { current: false };  // 拨号音乐是否播放
 
   const sampleRateRef = useRef<number>(22050);   // 返回音频采样率
@@ -147,7 +148,7 @@ const VoiceChat: React.FC = () => {
             try {
               socket.emit('audio_stream', {
                 user_id: userId.current,
-                data: Array.from(data),  // 已经是字节数组
+                data: Array.from(data),  // 已经是字节数组 uint8array
                 format: {
                   sampleRate: AUDIO_CONFIG.sampleRate,
                   channels: 1,
@@ -156,6 +157,9 @@ const VoiceChat: React.FC = () => {
                 },
                 timestamp: new Date().toISOString()
               });
+              if (countAmplitude.current % 5 === 0) {
+                setAmplitude(data);
+              }
             } catch (error) {
               console.error('Error sending audio data:', error);
             }
@@ -403,6 +407,7 @@ const VoiceChat: React.FC = () => {
     console.log('Attempting to connect...');
     if (!socket.connected) {
       socket.connect();
+      console.log('Connected successfully');
     }
   }, []);
 
@@ -410,14 +415,14 @@ const VoiceChat: React.FC = () => {
   // 开始注册流程的函数
   const startRegistration = useCallback(() => {
     console.log('Starting registration process...');
-    if (!isConnected) {
+    if (!isConnectedRef.current) {
       console.log('Not connected, first connecting...');
       connectSocket();
     } else {
       console.log('Sending registration with user ID:', userId.current);
       socket.emit('register', { user_id: userId.current });
     }
-  }, [isConnected, connectSocket]);    
+  }, []);    
 
 
   // 监听录音状态变化，发送给audio-processor 同步,并且控制播放
@@ -492,8 +497,7 @@ const VoiceChat: React.FC = () => {
 
     const handleConnect = () => {
       console.log('Connected to WebSocket');
-      setIsConnected(true);
-      setConnectionError('');
+      isConnectedRef.current = true;
       if (isInitialConnection) {
         console.log('Initial connection, sending registration');
         socket.emit('register', { user_id: userId.current });
@@ -503,7 +507,7 @@ const VoiceChat: React.FC = () => {
 
     const handleDisconnect = () => {
       console.log('Disconnected from WebSocket');
-      setIsConnected(false);
+      isConnectedRef.current = false;
       setIsReadyToTalk(false);
       isReadyToTalkRef.current = false;
       // 尝试重新连接
@@ -515,7 +519,6 @@ const VoiceChat: React.FC = () => {
 
     const handleConnectError = (error: Error) => {
       console.error('Connection error:', error);
-      setConnectionError('连接失败');
     };
 
     const handleMessage = (message: string) => {
@@ -774,12 +777,12 @@ const VoiceChat: React.FC = () => {
         setIsCalling(isCallingRef.current);
         
         // 要开始录音,先播放拨号音频
-        if (!isReadyToTalkRef.current) {  // 未准备好先注册启动服务
-          console.log('>>>>>>Not ready to talk yet, start registration...');
-          setStatusMessage('Calling Nana...');
-          playphoneCall();      // 在isreadytotalk状态设置后停止
-          startRegistration();
-        } 
+        // if (!isReadyToTalkRef.current) {  // 未准备好先注册启动服务
+        console.log('>>>>>>start registration...');
+        setStatusMessage('Calling Nana...');
+        playphoneCall();      // 在isreadytotalk状态设置后停止
+        startRegistration();
+        // } 
 
       } else {
         // 停止录音
@@ -938,7 +941,7 @@ const VoiceChat: React.FC = () => {
         </div>
 
         <div className="flex justify-center mt-6 relative">
-          {isCalling && <AudioVisualizer isActive={isCalling} />}
+          {isRecording && <AudioVisualizer isActive={isRecording} Amplitude={amplitude} />}
 
           <button
             className={`relative p-4 rounded-full transition-colors duration-300  ${

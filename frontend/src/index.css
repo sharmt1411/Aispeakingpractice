@@ -78,11 +78,11 @@
 }
 
 .animate-button-pulse {
-  animation: button-pulse 2s ease-in-out infinite;
+  animation: button-pulse 2s steps(16)  infinite;
 }
 
 .animate-star-attract {
-  animation: star-attract 2s ease-in-out infinite;
+  animation: star-attract 8s steps(40)  infinite;
 }
 
 /* Custom Scrollbar */
