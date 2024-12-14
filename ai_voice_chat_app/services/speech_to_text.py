@@ -52,9 +52,9 @@ class STTService(ServiceInstance):
         # self.result_queue = result_queue
         # self.session_id = session_id  # 用于区分不同会话
 
-        self.end_of_sentence_detection_pause = 0.45  # 0.45，需要权衡转写时间，等待越长会导致延迟越高
-        self.unknown_sentence_detection_pause = 1  # 0.7
-        self.mid_sentence_detection_pause = 2.0  # 句子中的停顿，以...结尾的句子，可以适当多等待一会，默认为2
+        self.end_of_sentence_detection_pause = 1  # 0.45，需要权衡转写时间，等待越长会导致延迟越高
+        self.unknown_sentence_detection_pause = 1.5  # 0.7
+        self.mid_sentence_detection_pause = 3.0  # 2 句子中的停顿，以...结尾的句子，可以适当多等待一会，默认为2
 
         # 句子断句判断时间，post_speech_silence_duration，超过这个时间的静音才认为是完整句子
         # self.stop_event = threading.Event()
@@ -71,7 +71,7 @@ class STTService(ServiceInstance):
             'silero_sensitivity': 0.2,  # 0.2 0-1，  0最不敏感，需要很大人声才能识别
             'webrtc_sensitivity': 2,  # 3 ranging from 0 (least aggressive / most sensitive) to 3 (most aggressive, least sensitive)
             'post_speech_silence_duration': self.unknown_sentence_detection_pause,
-            'min_length_of_recording': 0.8,
+            'min_length_of_recording': 0.4, # 0.8
             'min_gap_between_recordings': 0,   # 0
             'enable_realtime_transcription': True,
             'realtime_processing_pause': 0.02,  # 0.02 0.1很慢  影响on_realtime_transcription_stabilized的实时转录延迟，越小延迟越低,Specifies the time interval in seconds after a chunk of audio gets transcribed. Lower values will result in more "real-time" (frequent) transcription updates but may increase computational load.
