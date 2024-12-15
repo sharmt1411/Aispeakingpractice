@@ -173,7 +173,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 
 - 首先，你需要安装好python环境。
 - 然后，你需要下载项目代码，并安装相关依赖库。
-- 安装pytorch和cuda相关环境，详见 [GPU 支持与 CUDA](#gGPU-支持与-CUDA)
+- 安装pytorch和cuda相关环境，详见 [GPU 支持与 CUDA](#gpu-支持与-cuda)
 - 最后运行ai_voice_chat_app/main.py文件，打开浏览器，输入http://localhost:5000/ 即可进入主页。
 - 运行后需要填写ai_voice_chat_app/config.txt相关配置，基本全部免费申请即可。
 - 然后，你就可以和Nana愉快的对话了~（初次运行需要下载2G左右的模型，需要耐心等待）
