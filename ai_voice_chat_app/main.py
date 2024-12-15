@@ -11,7 +11,7 @@ from flask import Flask, send_from_directory
 from flask_socketio import SocketIO
 
 from services import ServiceManagement
-from websocket import register_socket_events
+from websocketevents import register_socket_events
 
 
 def background_thread():
@@ -56,15 +56,19 @@ def service_manager_process(input_queue, output_queue):
 
 if __name__ == '__main__':
 
-    input_queue = Queue()  # 进程间通信队列
-    output_queue = Queue()  # 进程间通信队列
+    # input_queue = Queue()  # 进程间通信队列
+    # output_queue = Queue()  # 进程间通信队列
     process = None
     try :
         multiprocessing.log_to_stderr()  # 启用多进程日志记录到标准错误流
         # logger = multiprocessing.get_logger()
         # logger.setLevel(logging.INFO)
         print('>>>>Starting service manager process')
-        process = Process(target=service_manager_process, args=(input_queue, output_queue))
+        ctx = multiprocessing.get_context('spawn')
+        input_queue = ctx.Queue()  # 进程间通信队列
+        output_queue = ctx.Queue()  # 进程间通信队列
+        process = ctx.Process(target=service_manager_process, args=(input_queue, output_queue))
+        # process = Process(target=service_manager_process, args=(input_queue, output_queue))
         process.start()
 
         time.sleep(10)   # 等待服务进程启动,用于调试观测
