@@ -4,7 +4,7 @@ Flask_SocketIO==5.4.1
 numpy==1.26.4
 openai==1.57.3
 mem0ai==0.1.34
-RealtimeSTT==0.3.7
+RealtimeSTT==0.3.92
 realtimetts[all]
 PyAudio==0.2.14
 torch==2.5.1
