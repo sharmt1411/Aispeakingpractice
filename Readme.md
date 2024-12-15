@@ -17,6 +17,7 @@ Therefore, an AI English tutor naturally solves part of these problems.
 
 I named her Nana, taken from the mobile assistant in "100 Things" - it's a very pleasant name.
 
+
 ### Features
 
 The project mainly integrates functionalities from several famous repositories, including:
@@ -24,6 +25,7 @@ The project mainly integrates functionalities from several famous repositories, 
 - Speech Recognition: [RealtimeSTT](https://github.com/KoljaB/RealtimeSTT), using faster whisper model for near real-time speech recognition.
 - Text-to-Speech: [RealtimeTTS](https://github.com/KoljaB/RealtimeTTS), using various TTS engines like GTTS, Coqui models for text-to-speech conversion.
 - Text Dialogue: Using [mem0](https://github.com/mem0ai/mem0)-based memory dialogue technology to achieve accurate conversation history recall, avoiding complex implementation of context storage.
+
 
 ### How to Use
 
@@ -58,6 +60,7 @@ The project mainly integrates functionalities from several famous repositories, 
 - fronted/ Frontend project directory
 - requirements.txt Dependencies file
 
+
 ### flowchart
 ![流程图](https://github.com/user-attachments/assets/43ff042c-c839-4e5c-b77b-67d500ef8221)
 
@@ -87,6 +90,7 @@ The project mainly integrates functionalities from several famous repositories, 
 - libavcodec
  - run `ldconfig -p | grep libavcodec` you will see something like this:`libavcodec.so.58 (libc6,x86-64) => /lib/x86_64-linux-gnu/libavcodec.so.58`
  - export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH && echo $LD_LIBRARY_PATH
+
 
 ### GPU Support with CUDA
 
@@ -154,6 +158,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 
 我把她叫做Nana，来自《100样东西》中的手机助手名字，非常好听。
 
+
 ### 功能
 
 项目主要集成了一些著名仓库的功能，包括：
@@ -162,6 +167,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - 文本转语音： RealtimeTTS, 使用各种STT引擎，如GTTS，Coqui等模型进行文本转语音。
 - 文本对话： 使用基于mem0的记忆对话技术，实现对话历史的准确记忆，避免上下文的存储与复杂实现
 - 将所有功能整合并提供前端界面，方便操作，实现服务的管理
+
 
 ### 如何使用
 
@@ -174,6 +180,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - 注意：项目也可直接部署到服务器上，实现多人对话。但是目前原STT库Coqui模型还未实现并行，所以一个用户大概用coqui需要4G的显存。
   - 一个24G显存服务器大概可以支持5-6个用户同时对话。
   - 服务部署后，会自动分配服务实例超过300s自动销毁，也可以长时间运行在自己的主机上。
+
 
 ### 项目结构
 
@@ -193,8 +200,10 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - fronted/ 前端项目目录 
 - requirements.txt 依赖库文件
 
+
 ### 流程图
 ![流程图](https://github.com/user-attachments/assets/0f37cc68-66f5-42a6-899c-a389ecb6b744)
+
 
 ### 一些问题解答
 
@@ -223,6 +232,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - libavcodec 相关
   - 运行 `ldconfig -p | grep libavcodec` 你会看到类似这样的输出：`libavcodec.so.58 (libc6,x86-64) => /lib/x86_64-linux-gnu/libavcodec.so.58`
   - 运行 `export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH && echo $LD_LIBRARY_PATH`
+
 
 ### GPU 支持与 CUDA
 
