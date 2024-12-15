@@ -189,8 +189,7 @@ class STTService(ServiceInstance):
                         return
 
                     if data:
-
-                        self.process_data(bytearray(data))
+                        self.process_data(bytearray(data))      # 需要输入int16格式转化的bytearray数据
                         # self.return_queue.put((user_id, service_name, result))    # 服务特殊由转写线程处理返回
                 except Exception as e:
                     print(f"STT-Service run-1 Error: {str(e)}")

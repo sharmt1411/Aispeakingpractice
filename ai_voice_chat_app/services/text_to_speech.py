@@ -120,6 +120,7 @@ class TTSService(ServiceInstance):
                                             on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
                                             on_audio_stream_start=lambda : print(f"audio stream started{time.time()}"),
                                             )
+            self.stream.player.audio_stream.actual_sample_rate = self.stream_info[2]
         except Exception as e:
             print(f"TTS服务实例初始化错误：{str(e)}")
             # self.state = ServiceState.ERROR
@@ -193,11 +194,11 @@ class TTSService(ServiceInstance):
                          on_audio_chunk= lambda audio_chunk : self.return_queue.put((self.uid, "TTS-result", audio_chunk)))
         # print("f3")
         # stanza需要具体指定语言
-        while self.stream.is_playing() :
-            # if keyboard.is_pressed("space") :
-            #     stream.stop()
-            #     break
-            time.sleep(0.1)
+        # while self.stream.is_playing() :
+        #     # if keyboard.is_pressed("space") :
+        #     #     stream.stop()
+        #     #     break
+        #     time.sleep(0.1)
         print(f"TTS-Service-play ended", time.time())
 
     def _process_data_group(self) :
@@ -258,7 +259,8 @@ if __name__ == '__main__':
     # instance.feed(("testuid", "TTS", "are"))
     # instance.feed(("testuid", "TTS", "you"))
     # instance.feed(("testuid", "TTS", "end"))
-    # time.sleep(10)
+
+    time.sleep(10)
 
     # CoquiEngine
     sample_rate = 24000  # 示例采样率
