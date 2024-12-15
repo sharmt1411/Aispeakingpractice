@@ -116,7 +116,7 @@ class TTSService(ServiceInstance):
 
             print(f"TTS服务实例音频流信息：{self.stream_info},Voice:{voice},{time.time()}")
 
-            self.stream = TextToAudioStream(self.engine, log_characters=False,
+            self.stream = TextToAudioStream(self.engine, log_characters=False, muted=True,
                                             on_text_stream_start=lambda : print(f"text stream started{time.time()}"),
                                             on_audio_stream_start=lambda : print(f"audio stream started{time.time()}"),
                                             )
