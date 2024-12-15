@@ -148,7 +148,7 @@ const VoiceChat: React.FC = () => {
             try {
               socket.emit('audio_stream', {
                 user_id: userId.current,
-                data: Array.from(data),  // 已经是字节数组 uint8array
+                data: data,//Array.from(data),  // 已经是字节数组 uint8array，此处序列化json对象，可以直接传输二进制
                 format: {
                   sampleRate: AUDIO_CONFIG.sampleRate,
                   channels: 1,
