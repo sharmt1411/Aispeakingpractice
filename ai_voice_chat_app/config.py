@@ -24,9 +24,9 @@ print(f"当前进程名称: {current_process1.name},id{current_process1.ident}")
 
 
 def create_default_config(config_file):
-    default_config = """MODEL_NAME = deepseek-chat
+    default_config = """MODEL_NAME = internlm/internlm2_5-20b-chat
 API_KEY = your_api_key_here
-BASE_URL = https://api.deepseek.com
+BASE_URL = https://api.siliconflow.cn/v1
 
 EMBEDDING_MODEL_NAME = BAAI/bge-m3
 EMBEDDING_API_KEY = your_embedding_api_key_here_Sk-xxxx
@@ -38,7 +38,7 @@ QDRANT_BASE_URL = https://xxxxx.gcp.cloud.qdrant.io
 
 TTS_ENGINE = GTTSEngine
 
-# 需要支持openai接口的API
+# CHAT模型需要支持openai接口的API，本教程使用InternLM书生浦语大模型进行测试，详见[API申请](https://internlm.intern-ai.org.cn/api/document).也可使用硅基流动平台提供的InternLM20B模型。
 # 上边模型用于聊天文本生成，以及记忆获取更新
 # 下边模型用于获取用户的embedding向量，用于计算相似度，需要到硅基流动申请API Key，目前大部分嵌入模型免费
 # Qdrant用于存储记忆向量，个人用户可免费申请1G，足够记忆使用
