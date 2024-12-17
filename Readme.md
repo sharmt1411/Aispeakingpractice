@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/1362b75b-cc37-40de-8896-abde907d3e2d)
+
+
 ## AI-English-Tutor
 
 <img width="667" alt="image" src="https://github.com/user-attachments/assets/3b4e44d9-758e-4739-8fbb-b161fc1709fa">
@@ -16,6 +19,8 @@ Most importantly, as introverted people who rarely speak in general, how could w
 Therefore, an AI English tutor naturally solves part of these problems.
 
 I named her Nana, taken from the mobile assistant in "100 Things" - it's a very pleasant name.
+
+
 
 
 ### Features
@@ -145,6 +150,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 
 
 ### 介绍
+项目为书生浦语大模型实战训练营项目，感谢平台提供的课程资源以及设备支持~[课程地址](https://github.com/InternLM/Tutorial)
 
 作为国人，包括我在内的大部分人即使认识英语，但是发音也及其不准确。
 
