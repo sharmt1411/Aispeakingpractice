@@ -2,7 +2,8 @@
 
 
 The project is InternLM Large Language Model Practical Training Camp project. Thanks to the platform for providing course resources and equipment support~[InternLM](https://github.com/InternLM)
-项目为书生浦语大模型实战训练营项目，感谢平台提供的课程资源以及设备支持~[课程地址](https://github.com/InternLM/Tutorial)
+
+项目为InternLM书生浦语大模型实战训练营项目，感谢平台提供的课程资源以及设备支持~[课程地址](https://github.com/InternLM/Tutorial)
 
 
 ## AI-English-Tutor
@@ -71,7 +72,7 @@ The project mainly integrates functionalities from several famous repositories, 
 
 
 ### flowchart
-![流程图](https://github.com/user-attachments/assets/43ff042c-c839-4e5c-b77b-67d500ef8221)
+![流程图](https://github.com/user-attachments/assets/9a1c6fd0-e275-4a56-818f-8803fe8c52af)
 
 
 ### some questions 
@@ -212,7 +213,7 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 
 
 ### 流程图
-![流程图](https://github.com/user-attachments/assets/0f37cc68-66f5-42a6-899c-a389ecb6b744)
+![流程图](https://github.com/user-attachments/assets/9a1c6fd0-e275-4a56-818f-8803fe8c52af)
 
 
 ### 一些问题解答
