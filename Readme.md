@@ -1,4 +1,6 @@
 ![image](https://github.com/user-attachments/assets/1362b75b-cc37-40de-8896-abde907d3e2d)
+The project is InternLM Large Language Model Practical Training Camp project. Thanks to the platform for providing course resources and equipment support~[InternLM](https://github.com/InternLM)
+项目为书生浦语大模型实战训练营项目，感谢平台提供的课程资源以及设备支持~[课程地址](https://github.com/InternLM/Tutorial)
 
 
 ## AI-English-Tutor
