@@ -6,6 +6,9 @@ The project is InternLM Large Language Model Practical Training Camp project. Th
 项目为InternLM书生浦语大模型实战训练营项目，感谢平台提供的课程资源以及设备支持~[课程地址](https://github.com/InternLM/Tutorial)
 
 
+[中文介绍看这里](#ai英语导师)
+
+
 ## AI-English-Tutor
 
 <img width="667" alt="image" src="https://github.com/user-attachments/assets/3b4e44d9-758e-4739-8fbb-b161fc1709fa">
