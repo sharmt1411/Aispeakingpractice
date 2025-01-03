@@ -9,4 +9,4 @@ realtimetts[all]==0.4.19
 PyAudio==0.2.14
 torch==2.5.1
 torchaudio==2.5.1
-
+ctranslate2==4.4.0
