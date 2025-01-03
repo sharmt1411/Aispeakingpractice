@@ -5,7 +5,7 @@ import threading
 import time
 import wave
 from multiprocessing import current_process
-from typing import override, Any
+# from typing import override, Any
 
 import pyaudio
 from RealtimeSTT import AudioToTextRecorder
@@ -129,7 +129,7 @@ class STTService(ServiceInstance):
     #     self.full_sentences = []
     #     self.prev_text = ""
 
-    @override
+    # @override
     def start_thread(self) -> None:
         """输入数据到服务实例"""
         print(f"STT服务实例线程start thread：{self.uid}")
@@ -142,7 +142,7 @@ class STTService(ServiceInstance):
             self.transcribe_thread.daemon = True  # Ensure the thread doesn't exit prematurely
             self.transcribe_thread.start()
 
-    @override
+    # @override
     def feed(self, data):
         """输入数据到服务实例的接口方法 内容(user_id, service_name, data)"""
         # print(f"STT服务实例收到数据：{self.uid},{len(data[2])}")
@@ -150,7 +150,7 @@ class STTService(ServiceInstance):
         # print(f"STT服务实例收到数据：{self.uid}，队列长度：{self.input_data.qsize()}")
         self.last_active_time = time.time()
 
-    @override
+    # @override
     def run(self):
         self.state = ServiceState.BUSY
         print(">>>>>>>>>STT-run-current-thread", threading.current_thread().ident, "current-process-id", current_process().ident, flush=True)
@@ -215,7 +215,7 @@ class STTService(ServiceInstance):
         self.transcribe_thread.join(5)
         print(f"STT服务recorder已停止：{self.uid}")
 
-    def process_data(self, data: Any):
+    def process_data(self, data):
         """处理输入数据，返回结果"""
         self.recorder.feed_audio(data, 16000)
 

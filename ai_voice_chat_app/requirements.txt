@@ -2,10 +2,10 @@ aiohttp==3.11.9
 Flask==3.0.3
 Flask_SocketIO==5.4.1
 numpy==1.26.4
-openai==1.57.3
+openai==1.57.0
 mem0ai==0.1.34
 RealtimeSTT==0.3.92
-realtimetts[all]
+realtimetts[all]==0.4.19 
 PyAudio==0.2.14
 torch==2.5.1
 torchaudio==2.5.1

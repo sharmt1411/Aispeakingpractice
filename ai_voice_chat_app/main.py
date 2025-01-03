@@ -123,7 +123,7 @@ if __name__ == '__main__':
         socketio.init_app(app)
         socketio.start_background_task(target=background_thread)
         print('Ws Server started')
-        socketio.run(app, debug=True, allow_unsafe_werkzeug=True, use_reloader=False)
+        socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True, use_reloader=False)
 
         print('MAIN-Server stopped')
         input_queue.put(("stop", 'stop', 'stop'))
