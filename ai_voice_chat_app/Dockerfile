@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /ai_voice_chat_app/
 RUN pip3 install --no-cache-dir -r requirements.txt
 
+RUN pip3 install --no-cache-dir  ctranslate2==4.4.0
+
 # 将 Flask 应用文件复制到容器中
 COPY . /ai_voice_chat_app/
 
