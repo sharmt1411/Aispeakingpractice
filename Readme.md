@@ -44,6 +44,7 @@ The project mainly integrates functionalities from several famous repositories, 
 
 ### How to Use
 
+- docker image have published， see in How to use 2: Docker
 - First, you need to have Python environment installed.
 - Then, download the project code and install related dependencies.
 - install cuda and pytorch,see in [GPU Support with CUDA](#gpu-support-with-cuda)
@@ -55,6 +56,18 @@ The project mainly integrates functionalities from several famous repositories, 
 - Note: The project can also be deployed on servers for multi-user conversations. However, currently the original STT library Coqui model hasn't implemented parallelization, so one user needs about 4G VRAM using Coqui.
   - A 24G VRAM server can support about 5-6 users chatting simultaneously.
   - After server deployment, service instances will be automatically allocated and destroyed after 300s, or can run long-term on your own machine.
+
+
+### How to use 2: Docker（recommend）
+
+
+- If you don't have Docker installed, go to the official website to install it
+- `docker pull sharmt/ai-speaking-image:latest` The image size is about 14GB, including cuda12.2, pytorch dependencies, coqui model, whisper tiny, small models, and nltktokennizer
+  - You can also create your own image using the Dockerfile in the folder
+- Run `docker run --gpus all --name ai-speaking -p 5000:5000 -it sharmt/ai-speaking-image`
+- After fully starting up, it will generate an ai_voice_chat_app\config.txt file. You need to modify the configuration file and set up the relevant API keys, which can generally all be applied for free
+- After configuration is complete, save and restart the image
+- Open http://localhost:5000/ and you can start having conversations!
 
 
 ### Project Structure
@@ -185,8 +198,9 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - 将所有功能整合并提供前端界面，方便操作，实现服务的管理
 
 
-### 如何使用
+### 如何使用1：源码安装
 
+- 建议使用下方docker方案直接运行，集成好环境和模型瞎子啊，防止出现奇怪的问题
 - 首先，你需要安装好python环境。
 - 然后，你需要下载项目代码，并安装相关依赖库。
 - 安装pytorch和cuda相关环境，详见 [GPU 支持与 CUDA](#gpu-支持与-cuda)
@@ -196,6 +210,17 @@ If you didn't use CUDA models before, some additional steps might be needed one 
 - 注意：项目也可直接部署到服务器上，实现多人对话。但是目前原STT库Coqui模型还未实现并行，所以一个用户大概用coqui需要4G的显存。
   - 一个24G显存服务器大概可以支持5-6个用户同时对话。
   - 服务部署后，会自动分配服务实例超过300s自动销毁，也可以长时间运行在自己的主机上。
+ 
+
+### 如何使用2：docker（建议方案）
+
+- 如果没有docker前往官网安装docker
+- `docker pull sharmt/ai-speaking-image:latest`  镜像大小大概14G，包含cuda12.2，pytorch依赖，coqui模型，whisper tiny，small模型，nltktokennizer
+  - 也可以使用文件夹内的dockerfile自行创建镜像
+- 运行`docker run --gpus all --name ai-speaking -p 5000:5000 -it sharmt/ai-speaking-image`
+- 完全启动后，会生成ai_voice_chat_app\config.txt文件，需要修改配置文件  配置相关apiKEY，基本全部免费申请即可。
+- 配置完毕后，保存重启镜像即可
+- 打开 http://localhost:5000/ 即可愉快的对话了~
 
 
 ### 项目结构
